@@ -1,0 +1,3395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Odoo IoT — Technical Documentation</title>
+  <style>
+    :root {
+      --odoo-purple: #714B67;
+      --odoo-purple-dark: #4f3449;
+      --odoo-purple-light: #9c6e8e;
+      --odoo-teal: #017E84;
+      --odoo-teal-light: #02a9b1;
+      --odoo-orange: #E05D44;
+      --odoo-bg: #F8F7F8;
+      --odoo-bg-2: #EEEAED;
+      --odoo-white: #FFFFFF;
+      --odoo-text: #2c2033;
+      --odoo-text-muted: #6b5d72;
+      --odoo-border: #D6CEDB;
+      --odoo-code-bg: #272727;
+      --odoo-code-text: #ffffff;
+      --sidebar-w: 260px;
+      --header-h: 60px;
+      --font-body: 'Georgia', 'Times New Roman', serif;
+      --font-mono: 'Consolas', 'Courier New', monospace;
+      --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--odoo-bg);
+      color: var(--odoo-text);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    /* HEADER */
+    .site-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      background: var(--odoo-purple-dark);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 1000;
+      border-bottom: 3px solid var(--odoo-orange);
+      gap: 16px;
+    }
+
+    .site-header .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: white;
+    }
+
+    .site-header .logo-text {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .site-header .logo-sub {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-left: 4px;
+    }
+
+    .header-divider {
+      flex: 1;
+    }
+
+    .header-badge {
+      font-size: 11px;
+      padding: 3px 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.04em;
+    }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: white;
+      font-size: 20px;
+      padding: 4px 8px;
+    }
+
+    /* ── LAYOUT ─────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      margin-top: var(--header-h);
+      min-height: calc(100vh - var(--header-h));
+    }
+
+    /* ── SIDEBAR ─────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      position: sticky;
+      top: var(--header-h);
+      height: calc(100vh - var(--header-h));
+      overflow-y: auto;
+      background: var(--odoo-white);
+      border-right: 1px solid var(--odoo-border);
+      padding: 20px 0;
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: var(--odoo-border);
+      border-radius: 2px;
+    }
+
+    .sidebar-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--odoo-purple);
+      padding: 14px 18px 6px;
+      opacity: 0.7;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 18px;
+      font-size: 12.5px;
+      color: var(--odoo-text-muted);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all 0.15s;
+      line-height: 1.4;
+    }
+
+    .sidebar-link:hover {
+      color: var(--odoo-purple);
+      background: var(--odoo-bg-2);
+      border-left-color: var(--odoo-purple-light);
+    }
+
+    .sidebar-link.active {
+      color: var(--odoo-purple-dark);
+      font-weight: 600;
+      background: #f0e9ef;
+      border-left-color: var(--odoo-purple);
+    }
+
+    .sidebar-link .num {
+      min-width: 18px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--odoo-purple-light);
+      opacity: 0.7;
+    }
+
+    /* ── MAIN CONTENT ─────────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 40px 48px 80px;
+    }
+
+    /* ── HERO ─────────────────────────────────────────── */
+    .doc-hero {
+      background: linear-gradient(135deg, var(--odoo-purple-dark) 0%, var(--odoo-purple) 60%, var(--odoo-purple-light) 100%);
+      border-radius: 10px;
+      padding: 36px 40px;
+      margin-bottom: 48px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .doc-hero::before {
+      content: '';
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .doc-hero::after {
+      content: '';
+      position: absolute;
+      right: 60px;
+      bottom: -60px;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .hero-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.65);
+      margin-bottom: 10px;
+      font-family: var(--font-ui);
+    }
+
+    .hero-title {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-desc {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.75);
+      max-width: 520px;
+      line-height: 1.7;
+    }
+
+    .hero-meta {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hero-tag {
+      font-size: 11px;
+      padding: 4px 12px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      color: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-family: var(--font-ui);
+    }
+
+    /* ── SECTION ─────────────────────────────────────────── */
+    .doc-section {
+      margin-bottom: 56px;
+      scroll-margin-top: calc(var(--header-h) + 24px);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--odoo-border);
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--odoo-purple-dark);
+      letter-spacing: -0.01em;
+    }
+
+    .subsection {
+      margin-bottom: 28px;
+      scroll-margin-top: calc(var(--header-h) + 24px);
+    }
+
+    .subsection-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--odoo-purple);
+      margin-bottom: 10px;
+      padding-left: 10px;
+      border-left: 3px solid var(--odoo-purple-light);
+    }
+
+    .subsubsection-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--odoo-text);
+      margin: 16px 0 8px;
+    }
+
+    p {
+      margin-bottom: 12px;
+      color: #3a2e40;
+      font-size: 14px;
+    }
+
+    ul,
+    ol {
+      padding-left: 22px;
+      margin-bottom: 12px;
+      color: #3a2e40;
+    }
+
+    li {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    li strong {
+      color: var(--odoo-purple-dark);
+    }
+
+    /* ── CODE BLOCKS ─────────────────────────────────────── */
+    pre {
+      background: var(--odoo-code-bg);
+      color: var(--odoo-code-text);
+      border-radius: 8px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.65;
+      margin: 14px 0 18px;
+      border-left: 4px solid var(--odoo-purple);
+      position: relative;
+    }
+
+    pre .lang-label {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255, 255, 255, 0.3);
+      font-family: var(--font-ui);
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      background: var(--odoo-bg-2);
+      color: var(--odoo-purple-dark);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* ── TABLES ─────────────────────────────────────────── */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 14px 0 18px;
+      border-radius: 8px;
+      border: 1px solid var(--odoo-border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead tr {
+      background: var(--odoo-purple-dark);
+      color: white;
+    }
+
+    thead th {
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #faf8fb;
+    }
+
+    tbody tr:hover {
+      background: #f0e9ef;
+    }
+
+    tbody td {
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--odoo-border);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    tbody td:first-child {
+      font-weight: 600;
+      color: var(--odoo-purple-dark);
+    }
+
+    tbody td code {
+      font-size: 11.5px;
+    }
+
+    /* ── INFO BOXES ─────────────────────────────────────── */
+    .info-box {
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 14px 0;
+      font-size: 13.5px;
+      border-left: 4px solid;
+    }
+
+    .info-box.note {
+      background: #f0f7f8;
+      border-color: var(--odoo-teal);
+      color: #0c4a4e;
+    }
+
+    .info-box.warning {
+      background: #fff8f0;
+      border-color: var(--odoo-orange);
+      color: #5a2800;
+    }
+
+    .info-box.tip {
+      background: #f5f0fc;
+      border-color: var(--odoo-purple-light);
+      color: var(--odoo-purple-dark);
+    }
+
+    .info-box strong {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      opacity: 0.7;
+    }
+
+    /* ── CARDS GRID ─────────────────────────────────────── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+      margin: 16px 0;
+    }
+
+    .card {
+      background: var(--odoo-white);
+      border: 1px solid var(--odoo-border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      border-top: 3px solid var(--odoo-purple);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--odoo-purple-dark);
+      margin-bottom: 6px;
+    }
+
+    .card-body {
+      font-size: 12.5px;
+      color: var(--odoo-text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── TOC ─────────────────────────────────────────── */
+    .toc-box {
+      background: var(--odoo-white);
+      border: 1px solid var(--odoo-border);
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin-bottom: 40px;
+      border-top: 3px solid var(--odoo-purple);
+    }
+
+    .toc-box h3 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--odoo-purple);
+      margin-bottom: 14px;
+    }
+
+    .toc-list {
+      columns: 2;
+      column-gap: 30px;
+      list-style: none;
+      padding: 0;
+    }
+
+    .toc-list li {
+      margin-bottom: 6px;
+      break-inside: avoid;
+    }
+
+    .toc-list a {
+      color: var(--odoo-text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      transition: color 0.15s;
+    }
+
+    .toc-list a:hover {
+      color: var(--odoo-purple);
+    }
+
+    .toc-list a .n {
+      font-size: 10px;
+      color: var(--odoo-purple-light);
+      font-weight: 700;
+      min-width: 18px;
+      font-family: var(--font-mono);
+    }
+
+    /* ── ARCH DIAGRAM ─────────────────────────────────────── */
+    .arch-diagram {
+      background: #1a1025;
+      color: #c8c0d8;
+      border-radius: 8px;
+      padding: 24px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.7;
+      overflow-x: auto;
+      border-left: 4px solid var(--odoo-teal);
+      margin: 14px 0 18px;
+    }
+
+    /* ── FLOW DIAGRAM ─────────────────────────────────────── */
+    .flow-steps {
+      margin: 16px 0;
+      position: relative;
+      padding-left: 32px;
+    }
+
+    .flow-steps::before {
+      content: '';
+      position: absolute;
+      left: 12px;
+      top: 14px;
+      bottom: 14px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--odoo-purple), var(--odoo-teal));
+    }
+
+    .flow-step {
+      position: relative;
+      margin-bottom: 16px;
+      background: var(--odoo-white);
+      border: 1px solid var(--odoo-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+    }
+
+    .flow-step::before {
+      content: '';
+      position: absolute;
+      left: -22px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      background: var(--odoo-purple);
+      border-radius: 50%;
+      border: 2px solid var(--odoo-white);
+      box-shadow: 0 0 0 2px var(--odoo-purple-light);
+    }
+
+    .flow-step-num {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--odoo-purple-light);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 3px;
+      font-family: var(--font-mono);
+    }
+
+    .flow-step-title {
+      font-weight: 700;
+      color: var(--odoo-purple-dark);
+      margin-bottom: 4px;
+    }
+
+    /* ── DEVICE TYPE BADGES ─────────────────────────────── */
+    .badge {
+      display: inline-block;
+      font-size: 10.5px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      letter-spacing: 0.02em;
+    }
+
+    .badge-linux {
+      background: #e3f0f0;
+      color: #005f63;
+      border: 1px solid #b0d8d8;
+    }
+
+    .badge-windows {
+      background: #e8f0ff;
+      color: #1a3a7a;
+      border: 1px solid #b0c8f0;
+    }
+
+    .badge-both {
+      background: #f5f0fc;
+      color: var(--odoo-purple-dark);
+      border: 1px solid #d8c8e8;
+    }
+
+    /* ── BACK TO TOP ─────────────────────────────────────── */
+    .back-to-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 40px;
+      height: 40px;
+      background: var(--odoo-purple);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      box-shadow: 0 4px 12px rgba(113, 75, 103, 0.4);
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .back-to-top:hover {
+      background: var(--odoo-purple-dark);
+    }
+
+    /* ── APPENDIX SPECIFIC ─────────────────────────────── */
+    .appendix-section {
+      background: var(--odoo-white);
+      border: 1px solid var(--odoo-border);
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
+
+    .appendix-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--odoo-purple-dark);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--odoo-border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .appendix-title .ap-tag {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background: var(--odoo-purple);
+      color: white;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+
+    /* ── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .sidebar {
+        position: fixed;
+        left: -100%;
+        z-index: 900;
+        transition: left 0.25s;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .sidebar.open {
+        left: 0;
+      }
+
+      .main-content {
+        padding: 28px 20px 60px;
+      }
+
+      .hamburger {
+        display: block;
+      }
+
+      .toc-list {
+        columns: 1;
+      }
+    }
+
+    /* ── PRINT STYLES ─────────────────────────────────── */
+    @media print {
+
+      .site-header,
+      .sidebar,
+      .back-to-top {
+        display: none;
+      }
+
+      .main-content {
+        padding: 20px;
+      }
+
+      .layout {
+        display: block;
+      }
+    }
+
+    hr.section-divider {
+      border: none;
+      border-top: 1px dashed var(--odoo-border);
+      margin: 32px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation">☰</button>
+    <a href="#top" class="logo-mark">
+      <span class="logo-text">Odoo IoT</span>
+      <span class="logo-sub">Technical Docs</span>
+    </a>
+  </header>
+
+  <!-- LAYOUT -->
+  <div class="layout" id="top">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+      <div id="navContent">
+        <div class="sidebar-section-label">Overview</div>
+        <a href="#s1" class="sidebar-link" data-section="s1"><span class="num">1</span>What is Odoo IoT?</a>
+        <a href="#s2" class="sidebar-link" data-section="s2"><span class="num">2</span>Architecture Overview</a>
+        <a href="#s3" class="sidebar-link" data-section="s3"><span class="num">3</span>Modules Involved</a>
+
+        <div class="sidebar-section-label">Setup &amp; Flow</div>
+        <a href="#s4" class="sidebar-link" data-section="s4"><span class="num">4</span>IoT Box Image Creation</a>
+        <a href="#s5" class="sidebar-link" data-section="s5"><span class="num">5</span>Connecting to Odoo</a>
+        <a href="#s6" class="sidebar-link" data-section="s6"><span class="num">6</span>Data Flow: Entry to Device</a>
+
+        <div class="sidebar-section-label">Integration</div>
+        <a href="#s7" class="sidebar-link" data-section="s7"><span class="num">7</span>Other Modules &amp; IoT</a>
+        <a href="#s8" class="sidebar-link" data-section="s8"><span class="num">8</span>HTTP vs WebSocket</a>
+        <a href="#s9" class="sidebar-link" data-section="s9"><span class="num">9</span>Driver &amp; Interface System</a>
+
+        <div class="sidebar-section-label">Operations</div>
+        <a href="#s10" class="sidebar-link" data-section="s10"><span class="num">10</span>Debugging Guide</a>
+        <a href="#s11" class="sidebar-link" data-section="s11"><span class="num">11</span>Limitations &amp; Why</a>
+
+        <div class="sidebar-section-label">Appendices</div>
+        <a href="#appA" class="sidebar-link" data-section="appA"><span class="num">A</span>HTTP Routes Reference</a>
+        <a href="#appB" class="sidebar-link" data-section="appB"><span class="num">B</span>Glossary</a>
+        <a href="#appC" class="sidebar-link" data-section="appC"><span class="num">C</span>File Locations</a>
+        <a href="#appD" class="sidebar-link" data-section="appD"><span class="num">D</span>Config Parameters</a>
+        <a href="#appE" class="sidebar-link" data-section="appE"><span class="num">E</span>Version Compatibility</a>
+      </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <!-- HERO -->
+      <div class="doc-hero">
+        <div class="hero-title">IoT — Technical Documentation</div>
+        <div class="hero-desc">Complete reference for the Odoo IoT system: architecture, modules, data flow, drivers,
+          interfaces, communication protocols, debugging.</div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 1 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s1">
+        <div class="section-header">
+          <h2 class="section-title">What is Odoo IoT?</h2>
+        </div>
+        <p>Odoo IoT is a system that connects physical hardware devices with the Odoo application. It consists of two
+          core components.</p>
+
+        <div class="subsection">
+          <div class="subsection-title">1.1 The IoT Box</div>
+          <p>A <strong>Raspberry Pi</strong> (or Virtual IoT on Windows) that runs a lightweight Odoo instance
+            with the <code>iot_drivers</code> module. The IoT box:</p>
+          <ul>
+            <li>Sits on the local network (LAN)</li>
+            <li>Connects to physical devices (printers, scales, payment terminals, etc.)</li>
+            <li>Acts as a <strong>proxy</strong> between those devices and the central Odoo database</li>
+            <li>Is itself a <strong>running Odoo server</strong> — it has its own Python environment,
+              <code>odoo.conf</code>, and can host HTTP routes
+            </li>
+          </ul>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">1.2 The IoT App</div>
+          <p>An Odoo module (<code>enterprise/iot</code>) running on the <strong>central Odoo server</strong> that:</p>
+          <ul>
+            <li>Manages IoT boxes and their devices</li>
+            <li>Communicates with IoT boxes via HTTP and WebSocket</li>
+            <li>Routes device actions from Odoo apps (POS, Reports, etc.) to the appropriate IoT box</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 2 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s2">
+        <div class="section-header">
+          <h2 class="section-title">Architecture Overview</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">2.1 High-Level Architecture</div>
+          <p>The system spans two distinct runtime environments separated by a network boundary:</p>
+          <svg width="100%" viewBox="0 0 680 520" role="img" xmlns="http://www.w3.org/2000/svg">
+            <title>Odoo IoT High-Level Architecture</title>
+            <desc>Two-layer architecture: Odoo Central Server on top, IoT Box (Raspberry Pi) on bottom, connected via
+              HTTP and WebSocket.</desc>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6"
+                orient="auto-start-reverse">
+                <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </marker>
+            </defs>
+
+            <!-- Central server container -->
+            <rect x="14" y="10" width="652" height="188" rx="12" fill="#f5f0fc" stroke="#714B67" stroke-width="0.5" />
+            <text x="28" y="30" font-family="sans-serif" font-size="13" font-weight="700" fill="#4f3449">Odoo database
+              — central server</text>
+            <text x="28" y="46" font-family="sans-serif" font-size="11" fill="#6b5d72">enterprise/iot module +
+              enterprise addons</text>
+
+            <!-- Models row -->
+            <rect x="28" y="56" width="108" height="46" rx="7" fill="#ede8f7" stroke="#714B67" stroke-width="0.5" />
+            <text x="82" y="76" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="700"
+              fill="#4f3449">iot.box</text>
+            <text x="82" y="92" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#714B67">model</text>
+
+            <rect x="146" y="56" width="108" height="46" rx="7" fill="#ede8f7" stroke="#714B67" stroke-width="0.5" />
+            <text x="200" y="76" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="700"
+              fill="#4f3449">iot.device</text>
+            <text x="200" y="92" text-anchor="middle" font-family="sans-serif" font-size="10"
+              fill="#714B67">model</text>
+
+            <rect x="264" y="56" width="130" height="46" rx="7" fill="#ede8f7" stroke="#714B67" stroke-width="0.5" />
+            <text x="329" y="76" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="700"
+              fill="#4f3449">iot.channel</text>
+            <text x="329" y="92" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#714B67">WebSocket
+              channel</text>
+
+            <rect x="404" y="56" width="248" height="46" rx="7" fill="#e3f5f0" stroke="#017E84" stroke-width="0.5" />
+            <text x="528" y="76" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="700"
+              fill="#085041">bus.bus</text>
+            <text x="528" y="92" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#0F6E56">pub/sub
+              messaging</text>
+
+            <line x1="136" y1="79" x2="146" y2="79" stroke="#b0b0b0" stroke-width="0.5" stroke-dasharray="3 2" />
+            <line x1="254" y1="79" x2="264" y2="79" stroke="#b0b0b0" stroke-width="0.5" stroke-dasharray="3 2" />
+            <line x1="394" y1="79" x2="404" y2="79" stroke="#b0b0b0" stroke-width="0.5" stroke-dasharray="3 2" />
+
+            <!-- HTTP Routes row -->
+            <rect x="28" y="116" width="136" height="38" rx="7" fill="#faece7" stroke="#E05D44" stroke-width="0.5" />
+            <text x="96" y="132" text-anchor="middle" font-family="monospace" font-size="10"
+              fill="#4f3449">/iot/setup</text>
+            <text x="96" y="147" text-anchor="middle" font-family="monospace" font-size="10"
+              fill="#4f3449">/iot/get_handlers</text>
+
+            <rect x="172" y="116" width="130" height="38" rx="7" fill="#faece7" stroke="#E05D44" stroke-width="0.5" />
+            <text x="237" y="132" text-anchor="middle" font-family="monospace" font-size="10"
+              fill="#4f3449">/iot/log</text>
+            <text x="237" y="147" text-anchor="middle" font-family="monospace" font-size="10"
+              fill="#4f3449">/iot/box/send_ws</text>
+
+            <rect x="310" y="116" width="342" height="38" rx="7" fill="#faece7" stroke="#E05D44" stroke-width="0.5" />
+            <text x="481" y="132" text-anchor="middle" font-family="monospace" font-size="10"
+              fill="#4f3449">/iot/box/update_certificate_status</text>
+            <text x="481" y="147" text-anchor="middle" font-family="monospace" font-size="10"
+              fill="#4f3449">/iot/keyboard_layouts</text>
+
+            <!-- Network divider -->
+            <line x1="14" y1="214" x2="666" y2="214" stroke="#999" stroke-width="1" stroke-dasharray="6 4"
+              opacity="0.4" />
+
+            <!-- HTTP/WS arrow -->
+            <line x1="180" y1="198" x2="180" y2="230" stroke="#E05D44" stroke-width="1.5" marker-end="url(#arrow)"
+              marker-start="url(#arrow)" />
+            <text x="192" y="218" font-family="sans-serif" font-size="10" fill="#993C1D">HTTP / WS</text>
+
+            <!-- IoT Box container -->
+            <rect x="14" y="230" width="652" height="278" rx="12" fill="#e1f5ee" stroke="#017E84" stroke-width="0.5" />
+            <text x="28" y="250" font-family="sans-serif" font-size="13" font-weight="700" fill="#085041">IoT box —
+              Raspberry Pi</text>
+            <text x="28" y="265" font-family="sans-serif" font-size="11" fill="#0F6E56">community/iot_drivers
+              module</text>
+
+            <!-- Thread row -->
+            <rect x="28" y="274" width="140" height="46" rx="7" fill="#9fe1cb" stroke="#017E84" stroke-width="0.5" />
+            <text x="98" y="293" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700"
+              fill="#04342c">Manager thread</text>
+            <text x="98" y="309" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#0F6E56">main.py —
+              orchestrator</text>
+
+            <rect x="178" y="274" width="140" height="46" rx="7" fill="#9fe1cb" stroke="#017E84" stroke-width="0.5" />
+            <text x="248" y="293" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700"
+              fill="#04342c">ConnectionManager</text>
+            <text x="248" y="309" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#0F6E56">pairing
+              mode</text>
+
+            <rect x="328" y="274" width="140" height="46" rx="7" fill="#9fe1cb" stroke="#017E84" stroke-width="0.5" />
+            <text x="398" y="293" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700"
+              fill="#04342c">WebSocketClient</text>
+            <text x="398" y="309" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#0F6E56">persistent
+              WS conn.</text>
+
+            <rect x="478" y="274" width="174" height="46" rx="7" fill="#9fe1cb" stroke="#017E84" stroke-width="0.5" />
+            <text x="565" y="293" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700"
+              fill="#04342c">EventManager</text>
+            <text x="565" y="309" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#0F6E56">routes +
+              callbacks</text>
+
+            <!-- Interface layer -->
+            <rect x="28" y="334" width="624" height="44" rx="7" fill="#b5d4f4" stroke="#185FA5" stroke-width="0.5" />
+            <text x="340" y="352" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="700"
+              fill="#042C53">Interface threads — one per connection type</text>
+            <text x="340" y="368" text-anchor="middle" font-family="sans-serif" font-size="10"
+              fill="#185FA5">USBInterface · SerialInterface · BluetoothInterface · DisplayInterface ·
+              PrinterInterface</text>
+
+            <line x1="340" y1="378" x2="340" y2="394" stroke="#888" stroke-width="1" marker-end="url(#arrow)"
+              opacity="0.5" />
+
+            <!-- Driver boxes -->
+            <rect x="28" y="396" width="108" height="46" rx="7" fill="#ede8f7" stroke="#714B67" stroke-width="0.5" />
+            <text x="82" y="415" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700"
+              fill="#4f3449">PrinterDriver</text>
+            <text x="82" y="431" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#714B67">CUPS /
+              ESC-POS</text>
+
+            <rect x="146" y="396" width="108" height="46" rx="7" fill="#ede8f7" stroke="#714B67" stroke-width="0.5" />
+            <text x="200" y="415" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700"
+              fill="#4f3449">ScaleDriver</text>
+            <text x="200" y="431" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#714B67">serial
+              RS-232</text>
+
+            <rect x="264" y="396" width="108" height="46" rx="7" fill="#ede8f7" stroke="#714B67" stroke-width="0.5" />
+            <text x="318" y="415" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700"
+              fill="#4f3449">DisplayDriver</text>
+            <text x="318" y="431" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#714B67">Chromium
+              / HDMI</text>
+
+            <rect x="382" y="396" width="114" height="46" rx="7" fill="#ede8f7" stroke="#714B67" stroke-width="0.5" />
+            <text x="439" y="415" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700"
+              fill="#4f3449">PaymentDriver</text>
+            <text x="439" y="431" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#714B67">ctypes
+              .so library</text>
+
+            <rect x="506" y="396" width="146" height="46" rx="7" fill="#ede8f7" stroke="#714B67" stroke-width="0.5" />
+            <text x="579" y="415" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700"
+              fill="#4f3449">…more drivers</text>
+            <text x="579" y="431" text-anchor="middle" font-family="sans-serif" font-size="10"
+              fill="#714B67">extensible</text>
+
+            <!-- Physical device labels -->
+            <line x1="82" y1="442" x2="82" y2="460" stroke="#888" stroke-width="0.5" marker-end="url(#arrow)"
+              opacity="0.4" />
+            <text x="82" y="476" text-anchor="middle" font-family="sans-serif" font-size="10"
+              fill="#6b5d72">Printer</text>
+
+            <line x1="200" y1="442" x2="200" y2="460" stroke="#888" stroke-width="0.5" marker-end="url(#arrow)"
+              opacity="0.4" />
+            <text x="200" y="476" text-anchor="middle" font-family="sans-serif" font-size="10"
+              fill="#6b5d72">Scale</text>
+
+            <line x1="318" y1="442" x2="318" y2="460" stroke="#888" stroke-width="0.5" marker-end="url(#arrow)"
+              opacity="0.4" />
+            <text x="318" y="476" text-anchor="middle" font-family="sans-serif" font-size="10"
+              fill="#6b5d72">Display</text>
+
+            <line x1="439" y1="442" x2="439" y2="460" stroke="#888" stroke-width="0.5" marker-end="url(#arrow)"
+              opacity="0.4" />
+            <text x="439" y="476" text-anchor="middle" font-family="sans-serif" font-size="10"
+              fill="#6b5d72">Terminal</text>
+          </svg>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">2.2 Key Design Principles</div>
+          <ol>
+            <li><strong>The IoT box is an Odoo server</strong> — It runs Odoo (Python), maintains its own config, hosts
+              HTTP routes, and uses the same WSGI architecture as a regular Odoo instance.</li>
+            <li><strong>Thread-per-device pattern</strong> — Each detected device runs in its own daemon thread,
+              allowing parallel device communication without blocking.</li>
+            <li><strong>Autonomous operation</strong> — Once configured, the IoT box runs independently. It can tolerate
+              Odoo server downtime and reconnects automatically.</li>
+            <li><strong>RAM-disk safety</strong> — The filesystem is mostly read-only (RAM disk) to protect against SD
+              card corruption from power loss. Only specific paths are persistent.</li>
+            <li><strong>No direct database access from devices</strong> — The IoT box does NOT connect directly to the
+              Odoo database. All communication goes through HTTP/WebSocket APIs.</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 3 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s3">
+        <div class="section-header">
+          <h2 class="section-title">Modules Involved</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">3.1 <code>community/addons/iot_drivers</code> — Hardware Proxy (IoT Box
+            Software)</div>
+          <p>This module runs on the Raspberry Pi and is the heart of the IoT box. It handles all hardware interaction,
+            networking, and communication with the central Odoo server.</p>
+
+          <div class="subsubsection-title">Core Architecture Files</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>main.py</code></td>
+                  <td><strong>Manager thread</strong> — the orchestrator. Loads interfaces, sends device list to Odoo,
+                    establishes WebSocket connection, manages scheduled tasks (certificate renewal, Wi-Fi reconnection,
+                    git updates). Entry point when the IoT box boots.</td>
+                </tr>
+                <tr>
+                  <td><code>connection_manager.py</code></td>
+                  <td><strong>Pairing flow</strong> — handles IoT box registration. Polls
+                    <code>iot-proxy.odoo.com</code> for pairing result. Runs as a separate daemon thread.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>websocket_client.py</code></td>
+                  <td><strong>WebSocket communication</strong> — maintains a persistent WebSocket connection to the Odoo
+                    bus. Receives commands from Odoo, sends responses back.</td>
+                </tr>
+                <tr>
+                  <td><code>interface.py</code></td>
+                  <td><strong>Device detection base class</strong> — Interface threads run in loops, calling
+                    <code>get_devices()</code> and matching devices to appropriate Drivers.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>driver.py</code></td>
+                  <td><strong>Device driver base class</strong> — Base class for all device drivers. Drivers register
+                    themselves via <code>__init_subclass__</code>. Each driver runs in its own daemon thread.</td>
+                </tr>
+                <tr>
+                  <td><code>event_manager.py</code></td>
+                  <td><strong>Event routing</strong> — bridges device events to Odoo's longpolling system and the
+                    WebSocket. Handles session management for waiting on device responses.</td>
+                </tr>
+                <tr>
+                  <td><code>browser.py</code></td>
+                  <td><strong>Display driver</strong> — spawns a Chromium browser instance for HDMI display output
+                    (POS customer display, kiosk).</td>
+                </tr>
+                <tr>
+                  <td><code>server_logger.py</code></td>
+                  <td><strong>Log forwarding</strong> — custom logging handler that sends IoT box logs to the Odoo
+                    database for remote monitoring.</td>
+                </tr>
+                <tr>
+                  <td><code>exception_logger.py</code></td>
+                  <td><strong>Error capture</strong> — redirects unhandled Python exceptions to the logging system
+                    (replaces <code>sys.stderr</code>).</td>
+                </tr>
+                <tr>
+                  <td><code>http.py</code></td>
+                  <td><strong>HTTP dispatcher patch</strong> — adds CORS support for IoT box's own routes and prevents
+                    database listing (security).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="subsubsection-title">Tools Submodule (<code>tools/</code>)</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>system.py</code></td>
+                  <td>OS-level utilities: IP address, MAC address, IoT box identifier (RPi serial number), version info,
+                    <code>odoo.conf</code> read/write, nginx control, <code>mtr</code> network quality testing, remote
+                    debug (Tailscale).
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>certificate.py</code></td>
+                  <td>SSL certificate management: downloads certificates from <code>odoo.com</code>, validates expiry,
+                    informs database of cert status, triggers nginx restart.</td>
+                </tr>
+                <tr>
+                  <td><code>wifi.py</code></td>
+                  <td>NetworkManager/Wi-Fi control: scan networks, connect/disconnect, access point mode (hostapd),
+                    persistent Wi-Fi config via netplan.</td>
+                </tr>
+                <tr>
+                  <td><code>communication.py</code></td>
+                  <td><strong>Message routing hub</strong> — <code>handle_message()</code> dispatches incoming messages
+                    (from WebSocket or HTTP) to the correct handler based on <code>message_type</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>helpers.py</code></td>
+                  <td>Server URL caching, token management, Odoo restart, custom handler download, browser state
+                    persistence, network quality checks, configuration parsing.</td>
+                </tr>
+                <tr>
+                  <td><code>route.py</code></td>
+                  <td><code>iot_route()</code> decorator — wrapper around <code>http.route</code> with secure defaults
+                    (<code>auth='none'</code>, <code>save_session=False</code>).</td>
+                </tr>
+                <tr>
+                  <td><code>upgrade.py</code></td>
+                  <td>Git-based code updates: fetches latest stable branch from GitHub, runs <code>git checkout</code>,
+                    updates pip requirements, manages system packages via apt.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="subsubsection-title">Controllers Submodule (<code>controllers/</code>)</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>homepage.py</code></td>
+                  <td>IoT box web UI (OWL-based): displays status, devices, pairing code, Wi-Fi config, log viewer,
+                    handler management, remote debug toggle.</td>
+                </tr>
+                <tr>
+                  <td><code>driver.py</code></td>
+                  <td>Device action routes: <code>/hw_drivers/action</code> (execute device action),
+                    <code>/hw_drivers/event</code> (longpolling for device events),
+                    <code>/hw_drivers/download_logs</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>proxy.py</code></td>
+                  <td>Legacy <code>/hw_proxy/hello</code> route (deprecated, kept for backward compatibility).</td>
+                </tr>
+                <tr>
+                  <td><code>l10n_eg_eta_usb.py</code></td>
+                  <td>Egyptian fiscal USB device handling.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="subsubsection-title">Handlers Submodule (<code>iot_handlers/</code>)</div>
+          <p>Contains device drivers and detection interfaces. Files are platform-specific:</p>
+          <p>
+            <span class="badge badge-linux">_L.py = Linux only (Raspberry Pi)</span>&ensp;
+            <span class="badge badge-windows">_W.py = Windows only</span>&ensp;
+            <span class="badge badge-both">no suffix = both platforms</span>
+          </p>
+
+          <div class="subsubsection-title">Drivers (<code>iot_handlers/drivers/</code>)</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Driver</th>
+                  <th>File</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Printer (Receipt/ESC-POS)</td>
+                  <td><code>printer_driver_L.py</code>, <code>printer_driver_W.py</code></td>
+                  <td>CUPS printing, receipt formatting, cashbox opening, Star and ESC/POS command support</td>
+                </tr>
+                <tr>
+                  <td>Printer (Label/ZPL)</td>
+                  <td><code>printer_driver_base.py</code></td>
+                  <td>Base class for all printer drivers</td>
+                </tr>
+                <tr>
+                  <td>Serial Scale</td>
+                  <td><code>serial_scale_driver.py</code></td>
+                  <td>Toledo 8217 serial protocol, continuous weight polling</td>
+                </tr>
+                <tr>
+                  <td>Serial Blackbox (BE)</td>
+                  <td><code>serial_blackbox_be_driver.py</code></td>
+                  <td>Belgian fiscal data module</td>
+                </tr>
+                <tr>
+                  <td>Serial Blackbox (SE)</td>
+                  <td><code>serial_blackbox_se_driver.py</code></td>
+                  <td>Swedish fiscal data module</td>
+                </tr>
+                <tr>
+                  <td>Serial Caliper</td>
+                  <td><code>serial_caliper_driver.py</code></td>
+                  <td>Serial caliper/measurement device</td>
+                </tr>
+                <tr>
+                  <td>Display</td>
+                  <td><code>display_driver_L.py</code></td>
+                  <td>Chromium browser for HDMI display, kiosk mode</td>
+                </tr>
+                <tr>
+                  <td>Keyboard</td>
+                  <td><code>keyboard_driver_L.py</code></td>
+                  <td>USB HID keyboard</td>
+                </tr>
+                <tr>
+                  <td>Camera</td>
+                  <td><code>camera_driver_L.py</code></td>
+                  <td>USB camera capture</td>
+                </tr>
+                <tr>
+                  <td>Bluetooth Caliper</td>
+                  <td><code>bluetooth_caliper_driver_L.py</code></td>
+                  <td>Bluetooth-based caliper</td>
+                </tr>
+                <tr>
+                  <td>Six Payment Terminal</td>
+                  <td><code>six_driver.py</code></td>
+                  <td>Worldline/Six terminal via ctypes <code>.so</code> library</td>
+                </tr>
+                <tr>
+                  <td>Worldline Terminal</td>
+                  <td><code>worldline_driver.py</code></td>
+                  <td>Worldline-specific terminal via ctypes</td>
+                </tr>
+                <tr>
+                  <td>ctypes Terminal Base</td>
+                  <td><code>ctypes_terminal_driver.py</code></td>
+                  <td>Base class for payment terminals using native libraries</td>
+                </tr>
+                <tr>
+                  <td>Serial Driver Base</td>
+                  <td><code>serial_driver_base.py</code></td>
+                  <td>Base class for all serial (RS232) devices</td>
+                </tr>
+                <tr>
+                  <td>Kenyan EDI</td>
+                  <td><code>l10n_ke_edi_serial_driver.py</code></td>
+                  <td>Kenyan electronic document driver</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="subsubsection-title">Interfaces (<code>iot_handlers/interfaces/</code>)</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Interface</th>
+                  <th>File</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>USB</td>
+                  <td><code>usb_interface_L.py</code></td>
+                  <td>Detects USB devices (excluding hubs and printers) using <code>pyusb</code>. Identifies by vid:pid.
+                  </td>
+                </tr>
+                <tr>
+                  <td>Serial</td>
+                  <td><code>serial_interface.py</code></td>
+                  <td>Detects serial (RS232) devices via <code>serial.tools.list_ports</code>. Filters out RPi console
+                    port.</td>
+                </tr>
+                <tr>
+                  <td>Bluetooth</td>
+                  <td><code>bluetooth_interface_L.py</code></td>
+                  <td>Detects Bluetooth devices using D-Bus/GATT.</td>
+                </tr>
+                <tr>
+                  <td>Display</td>
+                  <td><code>display_interface_L.py</code></td>
+                  <td>Detects HDMI displays.</td>
+                </tr>
+                <tr>
+                  <td>Printer</td>
+                  <td><code>printer_interface_L.py</code>, <code>printer_interface_W.py</code></td>
+                  <td>CUPS printer enumeration.</td>
+                </tr>
+                <tr>
+                  <td>CTEP</td>
+                  <td><code>ctep_interface.py</code></td>
+                  <td>EasyCTEP payment terminal detection.</td>
+                </tr>
+                <tr>
+                  <td>TIM</td>
+                  <td><code>tim_interface.py</code></td>
+                  <td>TIM payment terminal detection.</td>
+                </tr>
+                <tr>
+                  <td>Camera</td>
+                  <td><code>camera_interface_L.py</code></td>
+                  <td>V4L2 camera detection.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">3.2 <code>enterprise/iot</code> — Odoo Server Side</div>
+          <p>This module runs on the central Odoo database and manages IoT boxes from the web interface.</p>
+
+          <div class="subsubsection-title">Models</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>File</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>iot.box</code></td>
+                  <td><code>models/iot_box.py</code></td>
+                  <td>Represents a physical IoT box. Fields: identifier (RPi serial), IP/domain, version, token, SSL
+                    cert expiry, company. Handles pairing via token verification (<code>_get_by_token</code>).</td>
+                </tr>
+                <tr>
+                  <td><code>iot.device</code></td>
+                  <td><code>models/iot_device.py</code></td>
+                  <td>Represents a hardware device attached to an IoT box. Fields: type (printer, scale, display, etc.),
+                    connection (USB, serial, network, HDMI, bluetooth), manufacturer, identifier.</td>
+                </tr>
+                <tr>
+                  <td><code>iot.channel</code></td>
+                  <td><code>models/iot_channel.py</code></td>
+                  <td>Abstract model managing WebSocket channels. <code>get_iot_channel()</code> returns a
+                    company-specific channel name. <code>send_message()</code> pushes through
+                    <code>bus.bus._sendone()</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>ir.websocket</code></td>
+                  <td><code>models/ir_websocket.py</code></td>
+                  <td>Inherits <code>ir.websocket</code>. Intercepts WebSocket subscription — if a valid IoT token is
+                    provided, the IoT channel is added to the subscription.</td>
+                </tr>
+                <tr>
+                  <td><code>ir.config_parameter</code></td>
+                  <td><code>models/ir_config_parameter.py</code></td>
+                  <td>When <code>web.base.url</code> changes, notifies all IoT boxes via
+                    <code>iot.channel.send_message('server_update')</code>.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>ir.actions.report</code></td>
+                  <td><code>models/ir_actions_report.py</code></td>
+                  <td>Links reports to IoT printer devices. Overrides <code>report_action()</code> to include device
+                    identifiers in the report's context.</td>
+                </tr>
+                <tr>
+                  <td><code>publisher_warranty.contract</code></td>
+                  <td><code>models/update.py</code></td>
+                  <td>Adds IoT box count to Odoo's update check message.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="subsubsection-title">Controllers</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Route</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>/iot/setup</code></td>
+                  <td>Receives device registration from IoT box. Creates/updates <code>iot.box</code> and
+                    <code>iot.device</code> records. Returns WebSocket channel.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>/iot/get_handlers</code></td>
+                  <td>Returns a ZIP file of all installed modules' <code>iot_handlers/</code> directories. Used for
+                    custom driver distribution.</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/box/send_websocket</code></td>
+                  <td>Receives responses from IoT boxes (print complete, payment approved, etc.) and forwards to the
+                    WebSocket channel.</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/box/update_certificate_status</code></td>
+                  <td>Receives SSL certificate expiry date from IoT box.</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/keyboard_layouts</code></td>
+                  <td>Receives available keyboard layouts from IoT box and creates records.</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/box/&lt;identifier&gt;/display_url</code></td>
+                  <td>Returns display URLs for an IoT box's display devices.</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/log</code></td>
+                  <td>Receives log batches from IoT boxes. Authenticates via Bearer token, logs to Odoo server.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="subsubsection-title">Wizards</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Wizard</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>add_iot_box.py</code></td>
+                  <td>Multi-step wizard for connecting IoT boxes: discovers local boxes via mDNS/broadcast, calls
+                    <code>iot-proxy.odoo.com</code> for pairing, creates draft <code>iot.box</code> records. Stages:
+                    start → connect (auto or manual) → offline pairing.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>discovered_iot_box.py</code></td>
+                  <td>Transient model for discovered IoT boxes during pairing. Shows serial number and pairing code.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>select_printers.py</code></td>
+                  <td>Allows selecting multiple printers for a report (duplex printing).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">3.3 <code>setup/iot_box_builder</code></div>
+          <p>Builds the IoT box Raspberry Pi SD card image.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>File</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>iot_box_builder.py</code></td>
+                  <td>Main build script. Uses QEMU/KVM to emulate RPi, downloads RPi OS image, clones Odoo repo, copies
+                    system configs, runs chroot initialization, outputs <code>.img</code> file.</td>
+                </tr>
+                <tr>
+                  <td><code>overwrite_before_init/</code></td>
+                  <td>Directory of files copied to the image's root filesystem: nginx configs, systemd services, CUPS
+                    config, hostapd/dnsmasq configs, udev rules, SSL certificates, rc.local scripts.</td>
+                </tr>
+                <tr>
+                  <td><code>configuration/</code></td>
+                  <td><code>packages.txt</code> (apt packages), <code>requirements.txt</code> (pip packages).</td>
+                </tr>
+                <tr>
+                  <td><code>build_utils/</code></td>
+                  <td>Git sparse-checkout config for cloning only necessary Odoo files.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">3.4 Other IoT-Related Modules</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Module</th>
+                  <th>Path</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>pos_iot_adam_scale</code></td>
+                  <td><code>enterprise/</code></td>
+                  <td>Enterprise-specific Adam scale driver</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 4 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s4">
+        <div class="section-header">
+          <h2 class="section-title">IoT Box Image Creation</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">4.1 What Gets Built</div>
+          <p>The IoT Box image is a <strong>Raspberry Pi OS (Debian-based, 32-bit ARM)</strong> SD card image
+            containing:</p>
+          <ul>
+            <li><strong>Raspberry Pi OS Lite</strong> — minimal server edition, no desktop</li>
+            <li><strong>Odoo</strong> — cloned from GitHub, sparse checkout including
+              <code>community/addons/iot_drivers</code> and dependencies
+            </li>
+            <li><strong>nginx</strong> — reverse proxy routing port 8069 → 80, handling HTTPS</li>
+            <li><strong>CUPS</strong> — Common UNIX Printing System for network/USB printer management</li>
+            <li><strong>Chromium</strong> — for the display driver's browser (CLI mode)</li>
+            <li><strong>hostapd + dnsmasq</strong> — Wi-Fi access point mode</li>
+            <li><strong>Python dependencies</strong> — from <code>requirements.txt</code></li>
+            <li><strong>Systemd services</strong>: <code>odoo.service</code>, <code>labwc.service</code>,
+              <code>ramdisks.service</code>, <code>sos.service</code>, <code>odoo-led-manager.service</code>,
+              <code>odoo-nginx.service</code>, <code>hostapd.service</code>
+            </li>
+          </ul>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">4.2 Build Process</div>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-step-num">Step 1</div>
+              <div class="flow-step-title">Start QEMU/KVM</div>Emulates ARM processor to build RPi image on any x86
+              host. KVM with virtio networking, 8GB RAM, RPi OS image.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 2</div>
+              <div class="flow-step-title">Prepare Raspberry Pi OS Image</div>Download
+              <code>2025-10-01-raspios-trixie-armhf-lite.img.xz</code>, expand image by 2816 MiB, grow filesystem,
+              e2fsck, resize2fs, label as "iotboxfs".
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 3</div>
+              <div class="flow-step-title">Clone Odoo Repository (Sparse Checkout)</div>
+              <code>git clone -b {branch} --depth=1 --no-checkout</code>. Includes only
+              <code>community/addons/iot_drivers/**</code>, Odoo core files, and <code>setup/iot_box_builder/**</code>.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 4</div>
+              <div class="flow-step-title">Mount and Customize</div>Mount <code>/dev/loop0p2</code> and
+              <code>/dev/loop0p1</code>, copy qemu-arm-static for chroot, copy <code>overwrite_before_init/*</code> to
+              <code>/mnt</code>.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 5</div>
+              <div class="flow-step-title">Chroot Initialization</div><code>/etc/init_image.sh</code> runs inside
+              chroot: apt-get install packages, pip install requirements, create users (pi, odoo), configure
+              locales/keyboard/timezone, set up udev rules, configure nginx &amp; CUPS, write
+              <code>iotbox_version</code> file.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 6</div>
+              <div class="flow-step-title">Finalize</div>Unmount both partitions, zerofree (compress empty blocks),
+              output: <code>iotbox_YYYY.MM.DD.img</code>.
+            </div>
+          </div>
+
+          <p>Build command:</p>
+          <pre>python3 setup/iot_box_builder/iot_box_builder.py \
+  -i /path/to/raspi-os-image.img \
+  -l pi \
+  -d /tmp \
+  -b 18.0 \
+  -c /path/to/ca.pub</pre>
+          <p>Flashing the image to SD card:</p>
+          <pre>sudo dd if=/tmp/iotbox_YYYY.MM.DD.img of=/dev/sdX bs=4M status=progress</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">4.3 Virtual IoT Box (Windows/Linux)</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Aspect</th>
+                  <th>Physical IoT Box</th>
+                  <th>Virtual IoT Box</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Hardware access</td>
+                  <td>Direct USB, serial, GPIO</td>
+                  <td>Emulated or none</td>
+                </tr>
+                <tr>
+                  <td>Display driver</td>
+                  <td>labwc + Chromium kiosk</td>
+                  <td>Chromium fullscreen</td>
+                </tr>
+                <tr>
+                  <td>Printer detection</td>
+                  <td>CUPS + USB</td>
+                  <td>CUPS (local printers)</td>
+                </tr>
+                <tr>
+                  <td>Build required</td>
+                  <td>Full RPi image build</td>
+                  <td>None</td>
+                </tr>
+                <tr>
+                  <td>LED manager</td>
+                  <td>Yes</td>
+                  <td>No</td>
+                </tr>
+                <tr>
+                  <td>Access point mode</td>
+                  <td>Yes (hostapd)</td>
+                  <td>No</td>
+                </tr>
+                <tr>
+                  <td>System identification</td>
+                  <td>RPi serial number</td>
+                  <td>Random generated UUID</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>The Virtual IoT Box is intended for development and testing, Windows environments, and single-machine
+            setups.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">4.4 The RAM Disk Strategy</div>
+          <pre>/
+├── etc/                    (persistent - writable at boot)
+├── var/log/odoo/          (RAM disk - lost on reboot)
+├── tmp/                    (RAM disk)
+├── home/pi/odoo/          (RAM disk - git clone is here!)
+├── root_bypass_ramdisks/  (PERSISTENT - survives reboot)
+│   ├── etc/ssl/           (certificates persist)
+│   ├── var/lib/tailscale/ (tailscale state persists)
+│   └── etc/netplan/       (Wi-Fi config persists)
+└── /var/odoo/             (persistent - iotbox_version)</pre>
+          <p>The <code>ramdisks.service</code> systemd service creates symbolic links at boot, redirecting
+            <code>/var/log</code>, <code>/tmp</code>, and the Odoo home directory to RAM disks (tmpfs). This design:
+          </p>
+          <ul>
+            <li><strong>Protects SD cards</strong> — Prevents write wear from log files and temp data</li>
+            <li><strong>Survives power loss</strong> — Only critical config is persisted; most state is ephemeral</li>
+            <li><strong>Enables fast boot</strong> — tmpfs is immediately available, no disk fsck needed</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 5 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s5">
+        <div class="section-header">
+          <h2 class="section-title">Connecting IoT Box to Odoo</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">5.1 Two Connection Methods</div>
+
+          <div class="subsubsection-title">Method 1: Pairing Code (IoT Box Has Internet Access)</div>
+          <p>This is the standard method when the IoT box is connected to a network with internet access.</p>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-step-num">Step 1</div>
+              <div class="flow-step-title">Register with Proxy</div>IoT box calls <code>_register_iot_box()</code> →
+              POST <code>/odoo-enterprise/iot/connect-box</code> with <code>{serial_number}</code>. Proxy returns
+              <code>{pairing_code, pairing_uuid}</code>.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 2</div>
+              <div class="flow-step-title">Display Pairing Code</div>IoT box prints pairing code on connected receipt
+              printer.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 3</div>
+              <div class="flow-step-title">User Enters Code in Odoo</div>User opens the Odoo IoT App wizard and enters
+              the pairing code. Odoo calls <code>iot-proxy.odoo.com</code> with pairing code + DB URL + token.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 4</div>
+              <div class="flow-step-title">IoT Box Polls for Result</div>IoT box polls <code>iot-proxy.odoo.com</code>
+              every ~15–40 seconds (exponential backoff). Pairing code valid for <strong>2 hours</strong>.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 5</div>
+              <div class="flow-step-title">Credentials Saved &amp; Restart</div>IoT box saves credentials to
+              <code>odoo.conf</code> under <code>[iot.box]</code> section and restarts.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 6</div>
+              <div class="flow-step-title">Device Registration</div>On restart, Manager sends device list to
+              <code>/iot/setup</code>, receives the WebSocket channel, and connects via WebSocket.
+            </div>
+          </div>
+
+          <div class="subsubsection-title">Method 2: Offline Pairing (Token-Based)</div>
+          <p>When the IoT box cannot reach <code>iot-proxy.odoo.com</code> but can reach the Odoo server directly.</p>
+          <p>Token format (v18+):</p>
+          <pre>{url}?token={hex_token}&amp;db_uuid={uuid}&amp;enterprise_code={ec}&amp;db_name={name}</pre>
+          <div class="info-box note">
+            <strong>Note</strong>
+            Pre-v18 tokens used pipe-separated format (<code>url|token|uuid|ec</code>). v18+ uses URL query parameter
+            format for better readability and easier copying.
+          </div>
+          <p>User generates token in Odoo IoT App wizard → pastes token on IoT box homepage
+            (<code>http://{iot_box_ip}:8069</code>) → IoT box calls <code>/connect_to_server</code> → parses URL → saves
+            to <code>odoo.conf</code> → restarts → connects to database.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">5.2 Certificate Management (HTTPS Setup)</div>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-step-num">Step 1</div>
+              <div class="flow-step-title">Check Certificate Validity</div><code>certificate.ensure_validity()</code>
+              checks if <code>/etc/ssl/certs/nginx-cert.crt</code> exists, is valid (not expired, not a temp cert), and
+              has &gt;10 days remaining.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 2</div>
+              <div class="flow-step-title">Request New Certificate</div>If invalid: POST
+              <code>https://www.odoo.com/odoo-enterprise/iot/x509</code> with <code>{db_uuid, enterprise_code}</code>.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 3</div>
+              <div class="flow-step-title">Install Certificate</div>Write certificate to
+              <code>/etc/ssl/certs/nginx-cert.crt</code>, <code>/etc/ssl/private/nginx-cert.key</code>, and persistent
+              paths under <code>/root_bypass_ramdisks/</code>.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 4</div>
+              <div class="flow-step-title">Reload nginx &amp; Notify Database</div>Run <code>nginx -s reload</code>.
+              POST <code>/iot/box/update_certificate_status</code> with expiry date.
+            </div>
+          </div>
+          <div class="info-box tip">
+            <strong>Design Detail</strong>
+            The certificate is a Let's Encrypt certificate issued through Odoo.com as an intermediary. The IoT box does
+            NOT run its own ACME client (certbot).
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">5.3 IoT Box Homepage</div>
+          <p>The IoT box runs its own Odoo web server on port <strong>8069</strong>, served through nginx. The homepage
+            is an <strong>OWL 2-based</strong> web UI.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Section</th>
+                  <th>Content</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Header</td>
+                  <td>IoT box name, IP address, version, uptime</td>
+                </tr>
+                <tr>
+                  <td>Connection Status</td>
+                  <td>Odoo server URL, pairing code (if not connected), token status</td>
+                </tr>
+                <tr>
+                  <td>Devices</td>
+                  <td>List of connected devices with type, connection method, identifier</td>
+                </tr>
+                <tr>
+                  <td>Network</td>
+                  <td>Wi-Fi SSID, signal strength, access point mode toggle, QR codes</td>
+                </tr>
+                <tr>
+                  <td>Wi-Fi Setup</td>
+                  <td>Available networks, connect/disconnect, QR code generation</td>
+                </tr>
+                <tr>
+                  <td>SSL Certificate</td>
+                  <td>Expiry date, days remaining</td>
+                </tr>
+                <tr>
+                  <td>Logs</td>
+                  <td>Real-time log viewer with filtering by level</td>
+                </tr>
+                <tr>
+                  <td>Handler Management</td>
+                  <td>Load/reload custom handlers, toggle custom handlers</td>
+                </tr>
+                <tr>
+                  <td>Advanced</td>
+                  <td>Remote debug (Tailscale), log level configuration, restart, factory reset</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Access URLs: Homepage <code>http://{ip}:8069/</code> · Logs <code>http://{ip}:8069/logs</code> · Status
+            Display <code>http://{ip}:8069/status</code></p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 6 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s6">
+        <div class="section-header">
+          <h2 class="section-title">Data Flow: Entry Point to Device</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">6.1 The Thread Architecture</div>
+          <p>When Odoo starts on the IoT box, <code>iot_drivers/__init__.py</code> executes and starts all interface
+            threads. The complete thread structure:</p>
+          <pre>Main Process (Odoo WSGI)
+├── Manager Thread (daemon)
+│   ├── Checks device changes every 3 seconds
+│   ├── Manages scheduled tasks (daily cert check, weekly git update)
+│   └── Runs WebSocketClient
+├── ConnectionManager Thread (daemon)
+│   ├── Polls iot-proxy.odoo.com for pairing result
+│   └── Manages pairing state machine
+├── Interface Threads (daemon) — one per interface type
+│   ├── USBInterface: polls USB every 3 seconds
+│   ├── SerialInterface: polls serial ports every 3 seconds
+│   ├── BluetoothInterface: polls BT every 3 seconds
+│   └── ...
+├── Driver Threads (daemon) — one per connected device
+│   ├── PrinterDriver: polls CUPS job status every 1 second
+│   ├── ScaleDriver: reads serial port every 0.2 seconds
+│   ├── DisplayDriver: refreshes browser every 60 seconds
+│   └── PaymentTerminal: processes action queue
+├── WebSocketClient Thread (daemon)
+│   └── Receives/sends WebSocket messages
+└── Odoo HTTP Workers (request handling)
+    └── Serves IoT box homepage and driver routes</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">6.2 Complete Print Flow (Detailed)</div>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-step-num">Step 1 — POS User Clicks "Print Receipt"</div>
+              <div class="flow-step-title">RPC to IoT Box</div>POS JavaScript calls
+              <code>rpc('/hw_drivers/action', { session_id, device_identifier: 'usb_04b3:400c', data: { action: 'print_receipt', receipt: 'base64...' } })</code>.
+              Odoo's HTTP system proxies <code>/hw_drivers/*</code> to the IoT box.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 2</div>
+              <div class="flow-step-title">Message Sent via WebSocket</div><code>iot.channel.send_message()</code>
+              pushes to <code>bus.bus._sendone('iot_channel-xxx', 'iot_action', message)</code>. Odoo WebSocket
+              (longpolling) pushes to all subscribers.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 3</div>
+              <div class="flow-step-title">IoT Box Receives Message</div><code>WebSocketClient.on_message()</code>
+              parses the message, filters by <code>iot_identifier</code>, calls
+              <code>communication.handle_message('iot_action', 'ws', **payload)</code>.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 4</div>
+              <div class="flow-step-title">Message Routed to Device Driver</div>
+              <code>main.iot_devices['usb_04b3:400c'].action(payload)</code>. PrinterDriver:<br>1. Base64 decode receipt
+              image<br>2. Convert to grayscale, then 1-bit (dithered)<br>3. Choose ESC/POS format by printer model (Star
+              TSP100 / Epson TM-xxx / Epson TM-U220)<br>4. Add cut command → print via CUPS IPP.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 5</div>
+              <div class="flow-step-title">Status Polling</div>PrinterDriver polls CUPS job status every 1 second. On
+              completion: <code>send_status('success')</code> → <code>event_manager.device_changed()</code> → HTTP POST
+              to <code>/iot/box/send_websocket</code>.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">Step 6</div>
+              <div class="flow-step-title">Response Flowed Back to POS</div>Odoo <code>/iot/box/send_websocket</code>
+              validates response → pushes <code>operation_confirmation</code> via bus.bus → POS JavaScript receives → UI
+              shows "Payment Complete, Receipt Printed".
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">6.3 Scale Reading Flow</div>
+          <pre>Scale Driver Thread (runs every 0.2 seconds)
+    │
+    │ _take_measure():
+    │   weight = self._read_weight()
+    │   if weight != self.last_sent_value:
+    │       event_manager.device_changed(self)
+    │
+    ▼
+POS JavaScript polls: POST /hw_drivers/event
+    {session_id, devices: ['/dev/ttyUSB0'], last_event: 0}
+    │
+    ▼
+event_manager.add_request(listener)
+    │
+    │ No event yet → req['event'].wait(50) → blocks for up to 50s
+    │ Weight event arrives → session['event'].set()
+    ▼
+Weight event delivered → POS UI: "Weight: 1.235 kg"</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">6.4 Payment Terminal Flow</div>
+          <pre>POS: User selects "Pay with Card"
+    │
+    ▼
+POST /hw_drivers/action → WebSocket → IoT box
+    │
+    ▼
+SixDriver.queue_actions.put(transaction)
+    │
+    ▼
+SixDriver.run() dequeues → ctypes call to libeasyctep.so
+    │
+    │ six_perform_transaction(manager, pos_id, user_id,
+    │   transaction_type, amount, currency, transaction_id,
+    │   merchant_receipt, customer_receipt, card_number, ...)
+    │
+    ▼
+Terminal talks to bank (Xentissimo protocol over TCP/IP)
+    │
+    ▼
+Card processed → send_status(response='Approved', ...)
+    │
+    ▼
+event_manager → WebSocket → Odoo → POS: "Payment Approved"</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">6.5 Display Flow</div>
+          <pre>POS opens customer-facing display
+    │
+    ▼
+Odoo sets display URL via WebSocket
+    │
+    ▼
+DisplayDriver._action_open_customer_display({pos_id, access_token})
+    │
+    ▼
+browser.open_browser(url, state=BrowserState.FULLSCREEN)
+    │
+    │ Kill existing Chromium → subprocess.Popen([
+    │   'chromium', '--incognito', '--kiosk',
+    │   '--touch-events', '--start-fullscreen',
+    │   'http://odoo:8069/pos_customer_display/1/token'
+    │ ])
+    ▼
+Chromium browser opens on connected HDMI display
+    │
+    ▼
+Display shows: current order, total, advertisements</pre>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 7 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s7">
+        <div class="section-header">
+          <h2 class="section-title">How Other Modules Use the IoT System</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">7.1 Point of Sale (POS)</div>
+          <p>The POS module has deep IoT integration through several mechanisms:</p>
+          <div class="subsubsection-title">7.1.1 Display (Customer-Facing)</div>
+          <ul>
+            <li>POS connects to the IoT box's display via the <strong>PoS Self</strong> app</li>
+            <li>The <strong>DisplayDriver</strong> runs a Chromium browser showing the POS order summary</li>
+            <li><strong>Kiosk mode</strong> (<code>/pos-self/{pos_id}?access_token=...</code>): Full-screen self-service
+              POS</li>
+            <li><strong>Customer display mode</strong> (<code>/pos_customer_display/{pos_id}/{token}</code>):
+              Customer-facing screen alongside cashier POS</li>
+          </ul>
+          <div class="subsubsection-title">7.1.2 Printer</div>
+          <ul>
+            <li>POS renders receipts as <strong>SVG/images</strong> in the browser</li>
+            <li>Sends print action via WebSocket → IoT box → CUPS → Printer</li>
+            <li>Supports <strong>Star TSP100</strong> (Star commands) and <strong>Epson TM/TM-U</strong> (ESC/POS)
+              receipt printers</li>
+            <li><strong>Cashbox</strong>: Sends pulse signal via ESC/POS drawer kick command</li>
+            <li><strong>Label printers</strong>: ZPL-compatible label printers for product labels</li>
+          </ul>
+          <div class="subsubsection-title">7.1.3 Payment Terminal</div>
+          <ul>
+            <li>POS initiates payment through the IoT box</li>
+            <li>Supports <strong>Worldline/Six</strong> and <strong>Ingenico</strong> payment terminals</li>
+            <li>IoT box uses <strong>ctypes</strong> to call native <code>.so</code> libraries provided by the payment
+              terminal vendor</li>
+            <li>Handles: payments, refunds, cancellations, balance inquiries</li>
+            <li>Real-time status updates (waiting for card, processing, approved, declined)</li>
+          </ul>
+          <div class="subsubsection-title">7.1.4 Scale</div>
+          <ul>
+            <li>POS JavaScript subscribes to scale device via longpolling at <code>/hw_drivers/event</code></li>
+            <li>When weight changes, the event is delivered to the waiting session</li>
+            <li>POS automatically updates the line item weight in the order</li>
+          </ul>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">7.2 Reports (<code>ir.actions.report</code>)</div>
+          <p><code>ir.actions.report</code> can be linked to IoT printer devices via the <code>device_ids</code> field.
+            Print flow for reports:</p>
+          <ol>
+            <li>User clicks "Print" in Odoo</li>
+            <li>Report renders to PDF server-side</li>
+            <li>PDF is sent as <code>document</code> action data to the IoT box</li>
+            <li>IoT box receives via WebSocket → <code>PrinterDriver._action_default()</code></li>
+            <li>PrinterDriver prints via CUPS</li>
+          </ol>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">7.3 Custom Handlers Distribution</div>
+          <p>Odoo can push custom device drivers to the IoT box without rebuilding the image:</p>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-step-num">1</div>
+              <div class="flow-step-title">Enable Custom Handlers</div>User enables "Custom Handlers" on
+              <code>iot.box</code> record in Odoo UI.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">2</div>
+              <div class="flow-step-title">WebSocket Notification</div>Odoo sends <code>toggle_custom_handlers</code>
+              message to IoT box via WebSocket.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">3</div>
+              <div class="flow-step-title">Download Handlers ZIP</div>IoT box calls POST <code>/iot/get_handlers</code>.
+              Odoo searches all installed modules for <code>iot_handlers/</code> directories, excludes
+              platform-incompatible files, packages into ZIP with ETag.
+            </div>
+            <div class="flow-step">
+              <div class="flow-step-num">4</div>
+              <div class="flow-step-title">Extract and Restart</div>IoT box extracts to
+              <code>odoo/addons/iot_drivers/iot_handlers/</code>, then restarts. On restart, new driver classes register
+              themselves automatically.
+            </div>
+          </div>
+          <p>This allows: hardware vendors to distribute drivers as Odoo modules, custom integrations without rebuilding
+            the IoT image, and per-customer specific drivers.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">7.4 Fiscal Data Modules</div>
+
+          <div class="subsubsection-title">Belgian Black Box (<code>pos_blackbox_be</code>)</div>
+          <p>The Belgian fiscal black box is a <strong>serial device</strong> that records all transactions for tax
+            compliance. It connects via RS232 serial cable at 9600 baud. Sends: transaction records (date, amount, VAT
+            breakdown). Receives: sequence number, validation. When detected, Odoo automatically prompts to install the
+            <code>pos_blackbox_be</code> module.
+          </p>
+
+          <div class="subsubsection-title">Kenyan EDI (<code>l10n_ke_edi</code>)</div>
+          <p>Serial driver for communicating with the Kenyan eTIMS tax authority system.</p>
+
+          <div class="subsubsection-title">Egyptian ETA (<code>l10n_eg_eta</code>)</div>
+          <p>USB-based driver for Egyptian fiscal invoice devices via the ETA USB protocol.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 8 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s8">
+        <div class="section-header">
+          <h2 class="section-title">Communication: HTTP vs WebSocket</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">8.1 The Three Communication Paths</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Path</th>
+                  <th>Direction</th>
+                  <th>Protocol</th>
+                  <th>Use Case</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>IoT Box → Odoo (HTTP)</strong></td>
+                  <td>Unidirectional</td>
+                  <td>HTTP POST</td>
+                  <td>Registration, device list updates, certificate status, log upload</td>
+                </tr>
+                <tr>
+                  <td><strong>WebSocket</strong></td>
+                  <td>Bidirectional</td>
+                  <td>WebSocket</td>
+                  <td>Real-time commands: print, pay, display, scale reading</td>
+                </tr>
+                <tr>
+                  <td><strong>Odoo → IoT Box (HTTP)</strong></td>
+                  <td>Unidirectional</td>
+                  <td>HTTP</td>
+                  <td>IoT box homepage, status page, logs page, config APIs</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">8.2 HTTP Communication (IoT Box → Odoo)</div>
+          <p>All HTTP calls from the IoT box to Odoo are decorated with <code>@require_db</code>, ensuring calls are
+            only made when the IoT box has an IP address, is not in access point mode, and is connected to a database.
+          </p>
+          <p>All HTTP requests include headers:</p>
+          <pre>'User-Agent': 'OdooIoTBox/1.0'
+'X-Odoo-Database': db_name</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">8.3 WebSocket Communication</div>
+          <p>The IoT box maintains a <strong>persistent WebSocket connection</strong> to the Odoo server's Bus system.
+            On open, it subscribes to the IoT channel with its token and identifier. On message, it filters by
+            <code>iot_identifier</code>, routes to the appropriate handler, and sends acknowledgements back via HTTP.
+          </p>
+          <p><strong>Reconnection strategy</strong>: WebSocket library handles reconnection with
+            <code>run_forever(reconnect=10)</code>. On disconnect, tries to reconnect every 10 seconds. The Manager
+            thread also monitors and can restart the WebSocket client.
+          </p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">8.4 WebSocket Authentication</div>
+          <p><strong>Method 1 — Session Cookie</strong> (pre-v18, still used): The WebSocketClient obtains a session via
+            <code>GET /web/login</code> and sends the session cookie in the WebSocket headers.
+          </p>
+          <p><strong>Method 2 — IoT Token</strong> (v18+): The IoT token is sent in the WebSocket subscribe message. On
+            the server, <code>IrWebsocket._subscribe()</code> validates the token against the <code>iot.box</code>
+            record and adds the IoT channel to the subscription. Provides database-independent authentication.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">8.5 Longpolling (Event Waiting)</div>
+          <p>For devices that need to <strong>wait</strong> for responses (scale reading, payment confirmation), Odoo
+            uses longpolling via <code>POST /hw_drivers/event</code>. The event manager checks for recent events (last 5
+            seconds). If no matching event is found, it blocks via <code>event.wait(50)</code> for up to 50 seconds.
+            When a device reports data, all waiting sessions for that device are notified. This longpolling mechanism is
+            essential for real-time POS interactions.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 9 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s9">
+        <div class="section-header">
+          <h2 class="section-title">Driver and Interface System</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">9.1 Architecture Pattern: Registry + Auto-Registration</div>
+          <p>The IoT system uses a <strong>self-registering plugin architecture</strong> based on Python's
+            <code>__init_subclass__</code> hook:
+          </p>
+          <pre>Step 1: Driver Class Definition
+    class PrinterDriver_L(PrinterDriverBase):
+        connection_type = 'printer'
+        priority = 5
+        def supported(cls, device): return True
+    # __init_subclass__ called automatically:
+    # Driver.__init_subclass__() → drivers.append(PrinterDriver_L)
+
+Step 2: Interface Class Definition
+    class USBInterface(Interface):
+        connection_type = 'usb'
+        allow_unsupported = True
+        def get_devices(self): return usb_devices
+    # Interface.__init_subclass__() → interfaces['USBInterface'] = USBInterface
+
+Step 3: IoT Box Startup
+    for interface_thread in main.interfaces.values():
+        interface_thread().start()
+
+Step 4: Interface.run() Loop
+    while True:
+        devices = self.get_devices()
+        self.update_iot_devices(devices)
+
+Step 5: Device Matching
+    def add_device(identifier, device):
+        supported_driver = next(
+            (d for d in self.drivers if d.supported(device)), None)
+        if supported_driver:
+            d = supported_driver(identifier, device)
+            iot_devices[identifier] = d
+            d.start()  # Start driver thread</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">9.2 The Interface Class</div>
+          <p>Each interface subclass runs in a loop, polling for devices of its connection type every
+            <code>_loop_delay</code> seconds (default: 3). It maintains a set of <code>_detected_devices</code> and
+            calls <code>add_device()</code> for new devices and <code>remove_device()</code> for disconnected ones. The
+            loop exits only if no drivers are registered for the connection type.
+          </p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">9.3 The Driver Class</div>
+          <p>Each driver runs as a daemon thread, assigned to a specific device. Key properties:</p>
+          <ul>
+            <li><code>connection_type</code> — must match the interface's type</li>
+            <li><code>priority</code> — higher priority drivers are checked first during device matching</li>
+            <li><code>_actions</code> — dict mapping action names to handler methods</li>
+            <li><code>_recent_action_ids</code> — LRU(256) cache for action deduplication</li>
+            <li><code>data</code> — holds current device state: <code>{'value': '', 'result': ''}</code></li>
+          </ul>
+          <p>The <code>action(data)</code> method dispatches incoming actions, deduplicates via
+            <code>action_unique_id</code>, calls the appropriate handler, and notifies Odoo (except for printers and
+            payment terminals that handle their own event lifecycle).
+          </p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">9.4 Supported Device Types</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Connection</th>
+                  <th>Driver</th>
+                  <th>Continuous?</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Printer (Receipt)</strong></td>
+                  <td>USB, Network</td>
+                  <td><code>PrinterDriver_L/W</code></td>
+                  <td>No (job polling)</td>
+                </tr>
+                <tr>
+                  <td><strong>Printer (Label)</strong></td>
+                  <td>USB, Network</td>
+                  <td><code>PrinterDriver_L/W</code></td>
+                  <td>No</td>
+                </tr>
+                <tr>
+                  <td><strong>Scale</strong></td>
+                  <td>Serial</td>
+                  <td><code>ScaleDriver</code></td>
+                  <td>Yes (0.2s polling)</td>
+                </tr>
+                <tr>
+                  <td><strong>Payment Terminal</strong></td>
+                  <td>Network</td>
+                  <td><code>SixDriver</code>, <code>WorldlineDriver</code></td>
+                  <td>No (queue-based)</td>
+                </tr>
+                <tr>
+                  <td><strong>Display</strong></td>
+                  <td>HDMI</td>
+                  <td><code>DisplayDriver_L</code></td>
+                  <td>No (60s refresh)</td>
+                </tr>
+                <tr>
+                  <td><strong>Camera</strong></td>
+                  <td>USB</td>
+                  <td><code>CameraDriver_L</code></td>
+                  <td>No</td>
+                </tr>
+                <tr>
+                  <td><strong>Keyboard</strong></td>
+                  <td>USB</td>
+                  <td><code>KeyboardDriver_L</code></td>
+                  <td>Yes (event-based)</td>
+                </tr>
+                <tr>
+                  <td><strong>Barcode Scanner</strong></td>
+                  <td>Serial, USB</td>
+                  <td>(keyboard driver)</td>
+                  <td>Yes (keyboard emulation)</td>
+                </tr>
+                <tr>
+                  <td><strong>Fiscal Data Module</strong></td>
+                  <td>Serial</td>
+                  <td><code>SerialBlackboxBEDriver</code>, <code>SerialBlackboxSEDriver</code></td>
+                  <td>No</td>
+                </tr>
+                <tr>
+                  <td><strong>Caliper</strong></td>
+                  <td>Serial, Bluetooth</td>
+                  <td><code>SerialCaliperDriver</code>, <code>BluetoothCaliperDriver</code></td>
+                  <td>Yes</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">9.5 USB Device Identification</div>
+          <p>USB devices are identified by <strong>Vendor ID : Product ID</strong> (vid:pid):</p>
+          <pre>identifier = "usb_%04x:%04x" % (dev.idVendor, dev.idProduct)
+# Example: "usb_04b3:400c"</pre>
+          <p>If multiple devices share the same vid:pid, counters are appended: <code>usb_04b3:400c</code>,
+            <code>usb_04b3:400c_2</code>, <code>usb_04b3:400c_3</code>.
+          </p>
+          <div class="info-box warning">
+            <strong>Important</strong>
+            The identifier is what gets sent to the Odoo database. If the same physical device gets different
+            identifiers after a reboot (e.g., due to USB port ordering), Odoo will treat it as a new device.
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">9.6 Serial Device Identification</div>
+          <p>Serial devices are identified by their device path:</p>
+          <pre>identifier = port.device  # e.g., '/dev/ttyUSB0'</pre>
+          <p>The RPi 5 uses <code>/dev/ttyAMA10</code> as a console serial port — this is explicitly excluded to prevent
+            false detection as a scale.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 10 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s10">
+        <div class="section-header">
+          <h2 class="section-title">Debugging Guide</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">10.1 Accessing the IoT Box</div>
+          <div class="subsubsection-title">Via Browser (Easiest)</div>
+          <pre>Homepage:     http://{iot_box_ip}:8069/
+Logs:         http://{iot_box_ip}:8069/logs
+Status page:  http://{iot_box_ip}:8069/status</pre>
+
+          <div class="subsubsection-title">Via SSH</div>
+          <pre>ssh pi@{iot_box_ip}
+# Default password: "raspberry" (pre-v18)
+# v18+: randomly generated, shown ONCE on IoT homepage after first boot.
+# Can be regenerated from the homepage.</pre>
+
+          <div class="subsubsection-title">Via Tailscale (Remote Debug)</div>
+          <pre># Enable via IoT homepage → Advanced → Remote Debug
+# Enter Tailscale auth key
+# Then: ssh pi@{tailscale-hostname}</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">10.2 Log Locations</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Log</th>
+                  <th>Location</th>
+                  <th>Contents</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Odoo server log</td>
+                  <td><code>/var/log/odoo/odoo-server.log</code></td>
+                  <td>All Python logs</td>
+                </tr>
+                <tr>
+                  <td>Nginx access log</td>
+                  <td><code>/var/log/nginx/access.log</code></td>
+                  <td>HTTP requests to IoT box</td>
+                </tr>
+                <tr>
+                  <td>Nginx error log</td>
+                  <td><code>/var/log/nginx/error.log</code></td>
+                  <td>Nginx errors</td>
+                </tr>
+                <tr>
+                  <td>System logs</td>
+                  <td><code>journalctl -u odoo -f</code></td>
+                  <td>Odoo systemd service logs</td>
+                </tr>
+                <tr>
+                  <td>Kernel log</td>
+                  <td><code>dmesg</code></td>
+                  <td>USB device detection, hardware events</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">10.3 Changing Log Levels</div>
+          <p>Via the IoT Homepage (<code>/logs</code>), per-driver or per-interface log levels can be set. Levels
+            auto-reset to WARNING after 7 days.</p>
+          <p>Via API:</p>
+          <pre>curl -X POST http://{ip}:8069/iot_drivers/log_levels_update \
+  -H "Content-Type: application/json" \
+  -d '{"name": "iot-logging-driver-printer_driver_L", "value": "debug"}'</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">10.4 Key Debugging Commands (SSH)</div>
+          <pre># Check Odoo service status
+sudo systemctl status odoo
+
+# View real-time logs
+tail -f /var/log/odoo/odoo-server.log
+
+# Check Odoo service logs
+journalctl -u odoo -f
+
+# Check nginx
+sudo systemctl status nginx
+sudo nginx -t  # Test config
+
+# View detected devices (Python REPL)
+python3 -c "
+from odoo.addons.iot_drivers.main import iot_devices, interfaces
+print('Devices:', list(iot_devices.keys()))
+print('Interfaces:', list(interfaces.keys()))
+"
+
+# Test USB detection
+python3 -c "
+from odoo.addons.iot_drivers.iot_handlers.interfaces.usb_interface_L import USBInterface
+u = USBInterface()
+print('USB devices:', u.get_devices())
+"
+
+# Test serial detection
+python3 -c "
+from odoo.addons.iot_drivers.iot_handlers.interfaces.serial_interface import SerialInterface
+s = SerialInterface()
+print('Serial devices:', s.get_devices())
+"
+
+# Check Wi-Fi status
+nmcli device wifi list
+nmcli connection show
+
+# Check pairing status
+cat /etc/odoo/odoo.conf | grep -E "remote_server|token|db_uuid"
+
+# Test network quality
+python3 -c "
+from odoo.addons.iot_drivers.tools.helpers import check_network
+print('WAN:', check_network())
+print('Gateway:', check_network('192.168.1.1'))
+"
+
+# Restart Odoo service
+curl http://localhost:8069/iot_drivers/restart_odoo_service
+
+# Check SSL certificate
+sudo openssl x509 -in /etc/ssl/certs/nginx-cert.crt -text -noout \
+  | grep -E "Not After|Subject:"</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">10.5 Odoo Database Console Commands</div>
+          <pre># Check connected IoT boxes
+env['iot.box'].search([])
+
+# Check devices for a specific box
+box = env['iot.box'].search([('name', 'ilike', 'Shop')])[0]
+box.device_ids
+
+# Force reconnect (clear token)
+box.write({'token': False})
+
+# Check websocket channels
+env['ir.config_parameter'].get_param('iot.ws_channel')
+
+# Manually trigger device list send
+env['bus.bus']._sendone(
+    'iot_channel-xxx',
+    'iot_action',
+    {'iot_identifier': box.identifier, 'action': 'test_protocol'}
+)</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">10.6 Tracing a Print Request</div>
+          <pre># Step 1: Set printer driver to DEBUG
+curl -X POST http://localhost:8069/iot_drivers/log_levels_update \
+  -H "Content-Type: application/json" \
+  -d '{"name": "iot-logging-driver-printer_driver_L", "value": "debug"}'
+
+# Step 2: Watch logs
+tail -f /var/log/odoo/odoo-server.log | grep -i printer
+
+# Expected log sequence:
+# [DATE] websocket_client: (ws) Received message of type iot_action
+# [DATE] communication: (ws) device 'usb_xxxx' action started
+# [DATE] printer_driver_L: print_receipt called for printer EPSON TM-xxx
+# [DATE] printer_driver_L: job details for job id #42: {...}
+# [DATE] printer_driver_L: job state: 9 (completed)</pre>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">10.7 Common Issues and Fixes</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Symptom</th>
+                  <th>Likely Cause</th>
+                  <th>Fix</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>IoT box doesn't appear in Odoo</td>
+                  <td>Firewall blocking outbound HTTPS</td>
+                  <td>Allow port 443 outbound from IoT box</td>
+                </tr>
+                <tr>
+                  <td>Pairing code expired</td>
+                  <td>&gt;2 hours since generation</td>
+                  <td>Regenerate from IoT homepage</td>
+                </tr>
+                <tr>
+                  <td>Pairing code not printing</td>
+                  <td>No receipt printer connected</td>
+                  <td>Connect a receipt printer or check serial/USB printer</td>
+                </tr>
+                <tr>
+                  <td>Printer not detected</td>
+                  <td>USB hub or printer filtered</td>
+                  <td>USBInterface excludes class 7 (printers) and class 9 (hubs). Use CUPS or serial connection</td>
+                </tr>
+                <tr>
+                  <td>Display shows blank screen</td>
+                  <td>Browser crashed</td>
+                  <td><code>curl http://localhost:8069/iot_drivers/restart_odoo_service</code></td>
+                </tr>
+                <tr>
+                  <td>WebSocket disconnected</td>
+                  <td>Odoo server down</td>
+                  <td>Manager auto-reconnects every 10s. Check Odoo is running</td>
+                </tr>
+                <tr>
+                  <td>Certificate expired warning</td>
+                  <td>Cert &lt;10 days to expiry</td>
+                  <td>Should auto-renew. Check network to odoo.com</td>
+                </tr>
+                <tr>
+                  <td>Device identifier changed after reboot</td>
+                  <td>USB vid:pid collision</td>
+                  <td>Normal with multiple identical USB devices. Odoo creates new iot.device record</td>
+                </tr>
+                <tr>
+                  <td>Scale readings not updating</td>
+                  <td>Serial connection lost</td>
+                  <td>Driver auto-reconnects via serial_connection context manager</td>
+                </tr>
+                <tr>
+                  <td>Wi-Fi disconnects after reboot</td>
+                  <td>Wi-Fi config not persisted</td>
+                  <td>Must save via IoT homepage UI (writes to /root_bypass_ramdisks)</td>
+                </tr>
+                <tr>
+                  <td>Can't SSH after password change</td>
+                  <td>Password mismatch</td>
+                  <td>Reflash image or use OTG serial console</td>
+                </tr>
+                <tr>
+                  <td>Custom handlers not loading</td>
+                  <td>git clean deleted them</td>
+                  <td>Re-enable "Custom Handlers" on the iot.box to re-download</td>
+                </tr>
+                <tr>
+                  <td>"No IoT device found" in POS</td>
+                  <td>Device not registered</td>
+                  <td>Check Odoo IoT app shows the device as connected</td>
+                </tr>
+                <tr>
+                  <td>Payment terminal timeout</td>
+                  <td>Network issue</td>
+                  <td>Check firewall between IoT box and payment terminal gateway</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">10.8 Network Debugging</div>
+          <pre># Ping test (latency + packet loss)
+ping -c 10 {odoo_server_ip}
+
+# MTR (full traceroute with statistics)
+mtr -c 5 -r {odoo_server_ip}
+
+# Check routing
+ip route
+
+# Check DNS
+nslookup {odoo_server_domain}
+cat /etc/resolv.conf
+
+# Check if port 443 is reachable
+curl -v https://{odoo_server}/web
+
+# Check Odoo Bus endpoint
+curl -v "https://{odoo_server}/longpolling/poll" \
+  -H "Content-Type: application/json" \
+  -d '{"channels": [""], "last": 0}'
+
+# Check iot-proxy connectivity
+curl -v https://iot-proxy.odoo.com/odoo-enterprise/iot/connect-box \
+  -H "Content-Type: application/json" \
+  -d '{"params": {"pairing_code": "", "pairing_uuid": "", "serial_number": "test"}}'</pre>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 11 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s11">
+        <div class="section-header">
+          <h2 class="section-title">Limitations and Why They Exist</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.1 Device Identifier Persistence</div>
+          <p><strong>Problem</strong>: Device identifiers (especially USB) can change across reboots, causing Odoo to
+            treat the same physical device as a new device.</p>
+          <p><strong>Root cause</strong>: USB devices are identified only by <code>vid:pid</code>. The USB specification
+            does not mandate unique serial numbers for all device classes. Example: two identical receipt printers —
+            before reboot: <code>usb_04b3:400c</code> and <code>usb_04b3:400c_2</code> — after reboot: may swap.</p>
+          <p><strong>Why this design</strong>: Using only vid:pid is the most portable approach that works across all
+            USB devices without requiring vendor cooperation. Implementing serial number tracking would require
+            device-specific handling for each vendor.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.2 Network Dependency for Pairing</div>
+          <p><strong>Problem</strong>: Initial pairing requires the IoT box to reach <code>iot-proxy.odoo.com</code>.
+          </p>
+          <p><strong>Why</strong>: The proxy prevents unauthorized IoT boxes from connecting to your database, provides
+            a simple pairing code UX, and acts as a relay when the IoT box and Odoo server are on different networks.
+          </p>
+          <p><strong>Workaround</strong>: Offline pairing (token-based method) allows connecting when the proxy is
+            unreachable but the Odoo server is reachable on the LAN.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.3 USB Device Polling (Not Event-Based)</div>
+          <p><strong>Problem</strong>: USB device connect/disconnect is detected via polling every 3 seconds, not via
+            kernel uevent.</p>
+          <p><strong>Root cause</strong>: The original <code>pyudev</code> library (which uses kernel uevent) was
+            difficult to install and maintain on the Raspberry Pi image. The <code>usb</code> library (pyusb) requires
+            polling.</p>
+          <p><strong>Impact</strong>: Maximum 3-second delay in detecting USB device connect/disconnect. Acceptable
+            because for most IoT use cases (printers, scales), devices are connected at startup and stay connected.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.4 CUPS Dependency for Linux Printing</div>
+          <p><strong>Problem</strong>: Linux IoT box relies entirely on CUPS for printer communication.</p>
+          <p><strong>Why</strong>: CUPS provides a standardized IPP interface that works with most network printers and
+            is the standard Linux printing architecture.</p>
+          <p><strong>Limitations</strong>: Some USB printers require vendor-specific drivers not in CUPS; CUPS's IPP may
+            not support all printer features; USB printer identifier approach conflicts with CUPS enumeration.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.5 Single WebSocket Channel Per Company</div>
+          <p><strong>Problem</strong>: All IoT boxes from the same company share one WebSocket channel.</p>
+          <p><strong>Why</strong>: Odoo's bus system is designed for database-level channels. The IoT channel is created
+            once (<code>iot.ws_channel</code> config parameter) and all IoT boxes subscribe to it.</p>
+          <p><strong>Impact</strong>: All boxes receive all messages (filtered by <code>iot_identifier</code>). A
+            misbehaving IoT box won't break others' communication. No per-box channel isolation. This is acceptable
+            because the <code>iot_identifier</code> filter ensures each box only processes its own messages.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.6 Certificate Auto-Renewal Limitations</div>
+          <p><strong>Problem</strong>: Certificates are renewed via Odoo.com intermediary, not a continuous ACME
+            process.</p>
+          <p><strong>Advantages</strong>: Simpler implementation, works behind firewalls, no ACME port 80 requirement.
+          </p>
+          <p><strong>Limitations</strong>: Depends on Odoo.com's certificate service; maximum 5 retry attempts with
+            95-second timeout per attempt; certificates are not auto-renewed at 30 days (only when &lt;10 days remain).
+          </p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.7 RAM Disk Persistence Trade-offs</div>
+          <p><strong>What persists</strong> (under <code>/root_bypass_ramdisks/</code>): Odoo config, SSL certificates,
+            Wi-Fi/netplan configuration, Tailscale state, Odoo version file.</p>
+          <p><strong>What is lost on reboot</strong>: All log files, temporary files, git repository state (re-cloned on
+            boot), custom handler files (re-downloaded from Odoo DB if enabled).</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.8 Raspberry Pi Only (Physical)</div>
+          <p><strong>Why</strong>: Image is built specifically for Raspberry Pi OS (Debian ARM); device tree serial
+            numbers used for IoT box identifier; hardware-specific services (LED manager, hardware watchdog); ARM
+            architecture assumed throughout.</p>
+          <p><strong>Why acceptable</strong>: Raspberry Pi is affordable, widely available, well-documented, and has
+            excellent Linux support.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.9 Handler Architecture Limitations</div>
+          <p><strong>Problem</strong>: Custom handlers are wiped on git checkout. When the IoT box runs
+            <code>upgrade.check_git_branch()</code>, <code>git clean -dfx</code> removes all untracked files including
+            custom handlers.
+          </p>
+          <p><strong>Why this design exists</strong>: Custom handlers are treated as part of the Odoo module ecosystem.
+            They're downloaded from the Odoo database (which stores them as installed module assets), not as standalone
+            files.</p>
+          <p><strong>Workaround</strong>: Enable "Custom Handlers" on the iot.box record. After git clean, the Manager
+            downloads and re-installs handlers automatically on the next restart.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.10 Platform-Specific Driver Files</div>
+          <p><strong>Why</strong>: Different operating systems have different driver libraries (CUPS vs. Win32print),
+            USB APIs (pyusb vs. WinUSB), and browser execution approaches.</p>
+          <p><strong>Why acceptable</strong>: The platform split is minimal and necessary. Most device interaction code
+            (serial protocols, payment terminal ctypes, ESC/POS formatting) is in platform-independent base classes.
+            Only the hardware I/O layer is platform-specific.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">11.11 No Real Multi-Threading Safety for Some Resources</div>
+          <p><strong>Problem</strong>: Some shared resources (like the CUPS connection) use simple locks rather than
+            sophisticated concurrency control. PrinterDriver uses a <code>cups_lock</code> (<code>threading.Lock</code>)
+            for all CUPS operations.</p>
+          <p><strong>Why acceptable</strong>: The lock ensures thread-safe access to the CUPS connection object. For
+            most IoT use cases (1–2 printers), this is sufficient. High-throughput scenarios might need connection
+            pooling.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- APPENDIX A -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="appA">
+        <div class="section-header">
+          <h2 class="section-title">Appendix A: HTTP Routes Reference</h2>
+        </div>
+        <div class="appendix-section">
+          <div class="appendix-title"><span class="ap-tag">A.1</span> Routes on the IoT Box
+            (<code>community/addons/iot_drivers/controllers/</code>)</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Route</th>
+                  <th>Type</th>
+                  <th>Auth</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>/</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>IoT box homepage (OWL UI)</td>
+                </tr>
+                <tr>
+                  <td><code>/logs</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Log viewer page</td>
+                </tr>
+                <tr>
+                  <td><code>/status</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Status display page</td>
+                </tr>
+                <tr>
+                  <td><code>/hw_proxy/hello</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Legacy ping (deprecated)</td>
+                </tr>
+                <tr>
+                  <td><code>/hw_drivers/action</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Execute device action</td>
+                </tr>
+                <tr>
+                  <td><code>/hw_drivers/event</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Longpolling for device events</td>
+                </tr>
+                <tr>
+                  <td><code>/hw_drivers/download_logs</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Download log file</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/ping</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Health check</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/data</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Homepage data (devices, network, etc.)</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/wifi</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Wi-Fi status and available networks</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/log_levels</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Handler log levels</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/log_levels_update</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Update log level</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/restart_odoo_service</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Restart Odoo service</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/connect_to_server</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Connect to Odoo database (token-based)</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/save_credential</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Save database credentials</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/update_wifi</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Connect to Wi-Fi network</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/wifi_clear</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Clear Wi-Fi config</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/clear_credential</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Clear database credentials</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/server_clear</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Disconnect from server</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/load_iot_handlers</code></td>
+                  <td>http</td>
+                  <td>none</td>
+                  <td>Reload custom handlers</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/generate_password</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Generate new SSH password</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/enable_remote_debug</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Enable Tailscale remote debug</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/disable_remote_debug</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Disable Tailscale</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/enable_custom_handlers</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Toggle custom handlers</td>
+                </tr>
+                <tr>
+                  <td><code>/iot_drivers/update_git_tree</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Trigger git update</td>
+                </tr>
+                <tr>
+                  <td><code>/hw_proxy/customer_facing_display</code></td>
+                  <td>jsonrpc</td>
+                  <td>none</td>
+                  <td>Legacy customer display (deprecated)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="appendix-section">
+          <div class="appendix-title"><span class="ap-tag">A.2</span> Routes on the Odoo Database
+            (<code>enterprise/iot/controllers/</code>)</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Route</th>
+                  <th>Type</th>
+                  <th>Auth</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>/iot/setup</code></td>
+                  <td>jsonrpc</td>
+                  <td>public</td>
+                  <td>Device registration from IoT box</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/get_handlers</code></td>
+                  <td>http</td>
+                  <td>public</td>
+                  <td>Download custom handler ZIP</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/keyboard_layouts</code></td>
+                  <td>http</td>
+                  <td>public</td>
+                  <td>Receive keyboard layouts</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/box/&lt;id&gt;/display_url</code></td>
+                  <td>http</td>
+                  <td>public</td>
+                  <td>Get display URLs for an IoT box</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/box/send_websocket</code></td>
+                  <td>jsonrpc</td>
+                  <td>public</td>
+                  <td>Receive response from IoT box</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/box/update_certificate_status</code></td>
+                  <td>jsonrpc</td>
+                  <td>public</td>
+                  <td>Receive cert expiry date</td>
+                </tr>
+                <tr>
+                  <td><code>/iot/log</code></td>
+                  <td>http</td>
+                  <td>bearer</td>
+                  <td>Receive log batches from IoT box</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- APPENDIX B -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="appB">
+        <div class="section-header">
+          <h2 class="section-title">Appendix B: Glossary</h2>
+        </div>
+        <div class="appendix-section">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Term</th>
+                  <th>Definition</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>IoT Box</td>
+                  <td>A Raspberry Pi running the <code>iot_drivers</code> module, acting as a hardware proxy</td>
+                </tr>
+                <tr>
+                  <td>IoT App</td>
+                  <td>The <code>enterprise/iot</code> Odoo module managing IoT boxes from the central server</td>
+                </tr>
+                <tr>
+                  <td>Interface</td>
+                  <td>A Thread class that detects devices of a specific connection type (USB, serial, Bluetooth)</td>
+                </tr>
+                <tr>
+                  <td>Driver</td>
+                  <td>A Thread class that communicates with a specific device type (printer, scale, payment terminal)
+                  </td>
+                </tr>
+                <tr>
+                  <td>Handler</td>
+                  <td>General term for both interfaces and drivers</td>
+                </tr>
+                <tr>
+                  <td>CUPS</td>
+                  <td>Common Unix Printing System — Linux print spooler and IPP implementation</td>
+                </tr>
+                <tr>
+                  <td>ESC/POS</td>
+                  <td>Epson Standard Code for Point of Sale — the dominant receipt printer command language</td>
+                </tr>
+                <tr>
+                  <td>vid:pid</td>
+                  <td>USB Vendor ID and Product ID — the primary USB device identifier</td>
+                </tr>
+                <tr>
+                  <td>Pairing Code</td>
+                  <td>A short code displayed by the IoT box for manual pairing with a database</td>
+                </tr>
+                <tr>
+                  <td>WebSocket Channel</td>
+                  <td>A named channel in Odoo's Bus system for real-time message routing</td>
+                </tr>
+                <tr>
+                  <td>RAM Disk</td>
+                  <td>A filesystem stored entirely in RAM — fast but ephemeral</td>
+                </tr>
+                <tr>
+                  <td>IoT Proxy</td>
+                  <td><code>iot-proxy.odoo.com</code> — Odoo's relay server for pairing code exchange</td>
+                </tr>
+                <tr>
+                  <td>ctypes</td>
+                  <td>Python's foreign function interface for calling native <code>.so</code>/<code>.dll</code>
+                    libraries</td>
+                </tr>
+                <tr>
+                  <td>IPP</td>
+                  <td>Internet Printing Protocol — the protocol used by CUPS and network printers</td>
+                </tr>
+                <tr>
+                  <td>WSS</td>
+                  <td>WebSocket Secure — encrypted WebSocket connection</td>
+                </tr>
+                <tr>
+                  <td>Access Point Mode</td>
+                  <td>IoT box broadcasting its own Wi-Fi network for initial setup</td>
+                </tr>
+                <tr>
+                  <td>Tailscale</td>
+                  <td>VPN service for remote IoT box access without opening firewall ports</td>
+                </tr>
+                <tr>
+                  <td>Sparse Checkout</td>
+                  <td>Git technique to clone only specific directories, not the full repository</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- APPENDIX C -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="appC">
+        <div class="section-header">
+          <h2 class="section-title">Appendix C: Key File Locations</h2>
+        </div>
+        <div class="appendix-section">
+          <div class="appendix-title"><span class="ap-tag">C.1</span> On the IoT Box (Physical)</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>File/Directory</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>/var/log/odoo/odoo-server.log</code></td>
+                  <td>Main Odoo log</td>
+                </tr>
+                <tr>
+                  <td><code>/etc/odoo/odoo.conf</code></td>
+                  <td>Odoo configuration (symlink to persistent)</td>
+                </tr>
+                <tr>
+                  <td><code>/root_bypass_ramdisks/etc/odoo/odoo.conf</code></td>
+                  <td>Persistent Odoo config</td>
+                </tr>
+                <tr>
+                  <td><code>/etc/ssl/certs/nginx-cert.crt</code></td>
+                  <td>SSL certificate</td>
+                </tr>
+                <tr>
+                  <td><code>/etc/ssl/private/nginx-cert.key</code></td>
+                  <td>SSL private key</td>
+                </tr>
+                <tr>
+                  <td><code>/etc/nginx/conf.d/iot.conf</code></td>
+                  <td>Nginx configuration</td>
+                </tr>
+                <tr>
+                  <td><code>/var/odoo/iotbox_version</code></td>
+                  <td>IoT box image version</td>
+                </tr>
+                <tr>
+                  <td><code>/etc/hostapd/hostapd.conf</code></td>
+                  <td>Wi-Fi access point config</td>
+                </tr>
+                <tr>
+                  <td><code>/etc/netplan/</code></td>
+                  <td>Wi-Fi persistent config</td>
+                </tr>
+                <tr>
+                  <td><code>/home/pi/odoo/</code></td>
+                  <td>Odoo source code (RAM disk)</td>
+                </tr>
+                <tr>
+                  <td><code>odoo/addons/iot_drivers/iot_handlers/</code></td>
+                  <td>Drivers and interfaces (RAM disk)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="appendix-section">
+          <div class="appendix-title"><span class="ap-tag">C.2</span> In the Odoo Source Tree</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Path</th>
+                  <th>Content</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>community/addons/iot_drivers/</code></td>
+                  <td>IoT box software (runs on RPi)</td>
+                </tr>
+                <tr>
+                  <td><code>enterprise/iot/</code></td>
+                  <td>IoT management app (runs on Odoo server)</td>
+                </tr>
+                <tr>
+                  <td><code>setup/iot_box_builder/</code></td>
+                  <td>RPi image build scripts and configs</td>
+                </tr>
+                <tr>
+                  <td><code>enterprise/pos_iot_adam_scale/</code></td>
+                  <td>Adam scale driver</td>
+                </tr>
+                <tr>
+                  <td><code>upgrade/migrations/iot/</code></td>
+                  <td>Migration scripts for IoT module</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- APPENDIX D -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="appD">
+        <div class="section-header">
+          <h2 class="section-title">Appendix D: Configuration Parameters</h2>
+        </div>
+        <div class="appendix-section">
+          <p>The IoT box stores configuration in <code>odoo.conf</code> under the <code>[iot.box]</code> section:</p>
+          <pre>[iot.box]
+remote_server = https://my-odoo.example.com
+token = a1b2c3d4e5f6...
+db_uuid = 12345678-1234-1234-1234-123456789012
+enterprise_code = ENT123456
+db_name = my_database
+subject = *.my-odoo.example.com
+wifi_ssid = MyNetwork
+wifi_password = MyPassword
+custom_handlers = True
+iot_handlers_etag = abc123...
+log_level_reset_timestamp = 1715500000
+browser_url = http://192.168.1.100:8069/status/
+screen_orientation = normal
+six_payment_terminal = 12345
+
+[options]
+log_handler = :INFO,werkzeug:WARNING
+log_level = info</pre>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- APPENDIX E -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="appE">
+        <div class="section-header">
+          <h2 class="section-title">Appendix E: Version Compatibility</h2>
+        </div>
+        <div class="appendix-section">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Odoo Version</th>
+                  <th>IoT Box Image Prefix</th>
+                  <th>Pairing Method</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>v14–v16</td>
+                  <td>Old token format (pipe-separated)</td>
+                  <td>Pairing code + proxy</td>
+                </tr>
+                <tr>
+                  <td>v17</td>
+                  <td>Transition</td>
+                  <td>Both methods supported</td>
+                </tr>
+                <tr>
+                  <td>v18+</td>
+                  <td>New token format (URL params)</td>
+                  <td>Pairing code + proxy + offline token</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Backward compatibility is maintained:</p>
+          <ul>
+            <li>Pre-v18 IoT boxes can connect to v18 databases</li>
+            <li>v18 IoT boxes can connect to pre-v18 databases (with deprecation warnings)</li>
+          </ul>
+          <p>The <code>version</code> field on <code>iot.box</code> starts with a character indicating the platform:</p>
+          <ul>
+            <li><code>L</code> = Linux (Raspberry Pi)</li>
+            <li><code>W</code> = Windows</li>
+            <li><code>T</code> = Test (non-RPi/non-Windows)</li>
+          </ul>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- BACK TO TOP -->
+  <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+  <script>
+    // ── HAMBURGER MENU ──────────────────────────────
+    const hamburger = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('sidebar');
+    hamburger.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+        sidebar.classList.remove('open');
+      }
+    });
+
+    // ── ACTIVE NAV LINK ──────────────────────────────
+    const sections = document.querySelectorAll('.doc-section[id]');
+    const navLinks = document.querySelectorAll('.sidebar-link');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('data-section') === id) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }, { rootMargin: '-60px 0px -70% 0px', threshold: 0 });
+
+    sections.forEach(section => observer.observe(section));
+
+    // ── BACK TO TOP ──────────────────────────────────
+    const backBtn = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+      backBtn.classList.toggle('visible', window.scrollY > 400);
+    });
+    backBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ── CLOSE SIDEBAR ON NAV CLICK (MOBILE) ──────────
+    navLinks2.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 900) sidebar.classList.remove('open');
+      });
+    });
+  </script>
+</body>
+
+</html>
