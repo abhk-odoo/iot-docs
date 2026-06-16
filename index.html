@@ -786,6 +786,10 @@
         <a href="#s8" class="sidebar-link" data-section="s8"><span class="num">8</span>HTTP vs WebSocket</a>
         <a href="#s9" class="sidebar-link" data-section="s9"><span class="num">9</span>Driver &amp; Interface System</a>
 
+        <div class="sidebar-section-label">Deep Dives</div>
+        <a href="#s12" class="sidebar-link" data-section="s12"><span class="num">12</span>Subscription &amp; Certificate Lifecycle</a>
+        <a href="#s13" class="sidebar-link" data-section="s13"><span class="num">13</span>Print Receipt: Full Flow</a>
+
         <div class="sidebar-section-label">Operations</div>
         <a href="#s10" class="sidebar-link" data-section="s10"><span class="num">10</span>Debugging Guide</a>
         <a href="#s11" class="sidebar-link" data-section="s11"><span class="num">11</span>Limitations &amp; Why</a>
@@ -2812,6 +2816,936 @@ curl -v https://iot-proxy.odoo.com/odoo-enterprise/iot/connect-box \
       </section>
 
       <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 12 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s12">
+        <div class="section-header">
+          <h2 class="section-title">IoT Subscription &amp; Certificate Lifecycle</h2>
+        </div>
+
+        <!-- ── 12.1 ── -->
+        <div class="subsection">
+          <div class="subsection-title">12.1 What Does "Subscription" Mean for IoT?</div>
+          <p>There is <strong>no subscription button, no expiry date field, no "renew now" popup</strong> in the IoT module. The subscription is entirely invisible — it works through the SSL certificate.</p>
+          <p>Here is the simple idea:</p>
+          <ul>
+            <li>Every IoT box needs a valid HTTPS certificate to communicate with the Odoo server</li>
+            <li>The IoT box <strong>cannot generate this certificate on its own</strong> — it must ask Odoo.com to issue one</li>
+            <li>Odoo.com only issues a certificate if your database has a <strong>valid Enterprise license</strong></li>
+            <li>The certificate expires after ~60 days, so it must be renewed regularly</li>
+            <li>If the license is not valid, renewal fails, the certificate expires, and HTTPS breaks — the IoT box effectively stops working with Odoo</li>
+          </ul>
+          <p><strong>In short: the subscription IS the certificate. No valid license = no valid certificate = no communication.</strong></p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Question</th>
+                  <th>Answer</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>What two things does the IoT box need?</td>
+                  <td><code>db_uuid</code> (database ID) and <code>enterprise_code</code> (Enterprise license)</td>
+                </tr>
+                <tr>
+                  <td>Where are they stored on the IoT box?</td>
+                  <td>In <code>/etc/odoo/odoo.conf</code> under the <code>[iot.box]</code> section</td>
+                </tr>
+                <tr>
+                  <td>Where do they come from?</td>
+                  <td>Saved automatically when the IoT box is paired with an Odoo database</td>
+                </tr>
+                <tr>
+                  <td>Who checks the license?</td>
+                  <td>Odoo.com — when the IoT box asks for a certificate, odoo.com checks the license before issuing</td>
+                </tr>
+                <tr>
+                  <td>Is there code on the IoT box checking subscription?</td>
+                  <td><strong>No.</strong> The IoT box never checks "is my subscription active?" It only asks for certificates. Odoo.com decides whether to give one.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── 12.2 ── -->
+        <div class="subsection">
+          <div class="subsection-title">12.2 How It Actually Works — The Full Flow</div>
+          <p>Here is how the subscription + certificate system works from the moment you build the IoT image to daily operation. Each step tells you <strong>what happens</strong> and <strong>where in the code it is handled</strong>.</p>
+
+          <div class="flow-steps">
+            <!-- STEP 1 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 1</div>
+              <div class="flow-step-title">Image Build — A Temporary Certificate Is Included</div>
+              <p>When someone builds the IoT box image (the .img file you flash to an SD card), they include a <strong>temporary self-signed certificate</strong>. This is NOT a real certificate — it's just a placeholder so nginx can start.</p>
+              <p><strong>Where:</strong></p>
+              <ul>
+                <li>Build script: <code>setup/iot_box_builder/iot_box_builder.py</code></li>
+                <li>Temp cert file: <code>setup/iot_box_builder/overwrite_before_init/etc/ssl/certs/nginx-cert.crt</code></li>
+                <li>Temp key file: <code>setup/iot_box_builder/overwrite_before_init/etc/ssl/private/nginx-cert.key</code></li>
+              </ul>
+              <p><strong>What you'll see if you inspect the cert:</strong> The Common Name (CN) is <code>OdooTempIoTBoxCertificate</code>. It's valid for 100 years (2018–2118) — clearly not a real cert. The IoT code specifically looks for this name to know "this is the placeholder, I need a real one."</p>
+              <p><strong>At this point:</strong> The IoT box is just a blank image. It has no database, no license, no real certificate.</p>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 2</div>
+              <div class="flow-step-title">First Boot — IoT Box Runs with the Temporary Certificate</div>
+              <p>When you plug in the IoT box and it boots up, nginx starts using the temp certificate. The IoT box shows a pairing code on its screen/printer. But it <strong>cannot download a real certificate yet</strong> because it has no database credentials.</p>
+              <p><strong>Where this is handled:</strong></p>
+              <ul>
+                <li>Main entry point: <code>community/addons/iot_drivers/main.py</code> → <code>Manager.run()</code></li>
+                <li>Certificate check: <code>community/addons/iot_drivers/tools/certificate.py</code> → <code>ensure_validity()</code></li>
+                <li>The check sees the CN is <code>OdooTempIoTBoxCertificate</code> → knows it's invalid</li>
+                <li>It tries to download a real cert, but <code>db_uuid</code> is empty (not paired) → gives up</li>
+              </ul>
+              <p><strong>What you'll notice:</strong> The IoT box homepage loads, but browsers show a security warning (self-signed cert). Everything works locally (devices, printing), but it cannot talk to Odoo over HTTPS.</p>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 3</div>
+              <div class="flow-step-title">Pairing — Database Credentials Are Saved</div>
+              <p>The user pairs the IoT box with an Odoo database using the pairing code (or offline token). This is where <code>db_uuid</code> and <code>enterprise_code</code> get saved to the IoT box.</p>
+              <p><strong>Where this is handled:</strong></p>
+              <ul>
+                <li>Pairing starts from Odoo app: <code>enterprise/iot/wizard/add_iot_box.py</code> → calls iot-proxy</li>
+                <li>IoT box receives credentials: <code>community/addons/iot_drivers/connection_manager.py</code> → <code>_connect_to_server()</code></li>
+                <li>Credentials saved: <code>community/addons/iot_drivers/tools/helpers.py</code> → <code>save_conf_server(url, token, db_uuid, enterprise_code)</code></li>
+                <li>IoT box restarts to apply the new config</li>
+              </ul>
+              <p><strong>What's saved in <code>odoo.conf</code>:</strong></p>
+              <pre>[iot.box]
+remote_server = https://my-odoo.example.com
+token = a1b2c3d4...
+db_uuid = abc-123-...
+enterprise_code = ENT-456-...</pre>
+              <p><strong>At this point:</strong> The IoT box knows which database it belongs to, but still has the temp certificate.</p>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 4</div>
+              <div class="flow-step-title">After Restart — Real Certificate Downloaded from Odoo.com</div>
+              <p>After the restart, the certificate check runs again. This time, <code>db_uuid</code> and <code>enterprise_code</code> exist — so the IoT box asks Odoo.com for a real certificate.</p>
+              <p><strong>Where this is handled:</strong></p>
+              <ul>
+                <li>Certificate download: <code>community/addons/iot_drivers/tools/certificate.py</code> → <code>download_odoo_certificate()</code></li>
+                <li>Request sent to: <code>https://www.odoo.com/odoo-enterprise/iot/x509</code></li>
+                <li>Odoo.com checks: "Does this <code>db_uuid</code> have a valid Enterprise license?"</li>
+                <li>If YES → issues a real Let's Encrypt certificate</li>
+                <li>If NO → returns an error, IoT box keeps the temp certificate</li>
+              </ul>
+              <p><strong>Where the cert is saved:</strong></p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Path</th>
+                      <th>Purpose</th>
+                      <th>Survives Reboot?</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><code>/etc/ssl/certs/nginx-cert.crt</code></td>
+                      <td>RAM disk — nginx reads from here</td>
+                      <td>No (but re-synced from SD at boot)</td>
+                    </tr>
+                    <tr>
+                      <td><code>/root_bypass_ramdisks/etc/ssl/certs/nginx-cert.crt</code></td>
+                      <td>Real SD card — persistent storage</td>
+                      <td>Yes</td>
+                    </tr>
+                    <tr>
+                      <td><code>/etc/ssl/private/nginx-cert.key</code></td>
+                      <td>Private key (RAM)</td>
+                      <td>No</td>
+                    </tr>
+                    <tr>
+                      <td><code>/root_bypass_ramdisks/etc/ssl/private/nginx-cert.key</code></td>
+                      <td>Private key (persistent)</td>
+                      <td>Yes</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>The cert is written to <strong>both</strong> locations because: RAM disk is what nginx reads right now, but the SD card is what survives reboots. The IoT box uses <code>setup_ramdisks.sh</code> at boot to copy from SD → RAM.</p>
+              <p><strong>After this:</strong> The IoT box has a real certificate. HTTPS works. The IoT box is fully connected to Odoo. All features work.</p>
+            </div>
+
+            <!-- STEP 5 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 5</div>
+              <div class="flow-step-title">Daily Auto-Renewal — Certificate Stays Fresh</div>
+              <p>The real certificate expires after about 60 days. To prevent this, the IoT box checks every day at midnight whether the certificate needs renewal.</p>
+              <p><strong>Where this is handled:</strong></p>
+              <ul>
+                <li>Scheduler: <code>community/addons/iot_drivers/main.py</code> → <code>schedule.every().day.at("00:00").do(certificate.ensure_validity)</code></li>
+                <li>Check logic: <code>community/addons/iot_drivers/tools/certificate.py</code> → <code>get_certificate_end_date()</code></li>
+                <li>If less than 10 days until expiry → calls <code>download_odoo_certificate()</code> again</li>
+                <li>Odoo.com validates the license again → issues a new cert → old cert is replaced</li>
+                <li>Also runs on every IoT box boot (not just midnight)</li>
+              </ul>
+              <p><strong>Retry behavior:</strong> If the download fails (network issue, odoo.com down), it retries up to 5 times with a 95-second timeout each. If all 5 fail, it waits until the next day's check.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 12.3 ── -->
+        <div class="subsection">
+          <div class="subsection-title">12.3 What Happens When Things Go Wrong</div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Situation</th>
+                  <th>What Happens</th>
+                  <th>What the User Sees</th>
+                  <th>How to Fix</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Enterprise license expired on Odoo.com</td>
+                  <td>Odoo.com refuses to issue/renew the certificate. The current cert continues to work until it expires.</td>
+                  <td>Nothing immediately. After cert expires: browser security warnings, WebSocket disconnects, POS can't print to IoT printers.</td>
+                  <td>Renew the Enterprise license on odoo.com. The next daily check will download a new cert.</td>
+                </tr>
+                <tr>
+                  <td><code>db_uuid</code> or <code>enterprise_code</code> missing from odoo.conf</td>
+                  <td><code>download_odoo_certificate()</code> gives up immediately — it can't even ask odoo.com.</td>
+                  <td>IoT box shows temp cert (CN = OdooTempIoTBoxCertificate). Browsers show security warning. Can't pair.</td>
+                  <td>Re-pair the IoT box with the database, or manually save the credentials via the IoT box homepage.</td>
+                </tr>
+                <tr>
+                  <td>Network can't reach odoo.com</td>
+                  <td>Certificate download times out (95s per attempt, 5 retries). Retries next day.</td>
+                  <td>Current cert works until it expires. If it has already expired, HTTPS is broken.</td>
+                  <td>Fix network. If cert already expired, the IoT box may need to be re-paired once network is restored.</td>
+                </tr>
+                <tr>
+                  <td>IoT box deleted from Odoo app (admin clicks "Delete")</td>
+                  <td>Odoo sends <code>server_clear</code> → IoT box clears all config (db_uuid, token, etc.) and restarts.</td>
+                  <td>IoT box shows pairing code again. Acts like a fresh unboxed device.</td>
+                  <td>Re-pair with a database.</td>
+                </tr>
+                <tr>
+                  <td>Certificate expired (no renewal happened)</td>
+                  <td>nginx can't complete HTTPS handshake. WebSocket and HTTPS-based communication fails.</td>
+                  <td>POS printing via WebSocket fails. Device registration stops. But local HTTP (longpolling) may still work.</td>
+                  <td>Fix whatever caused the renewal to fail (network, license, credentials). If stuck, re-pair the box.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── 12.4 ── -->
+        <div class="subsection">
+          <div class="subsection-title">12.4 How the IoT Box Knows It's Connected</div>
+          <p>Beyond the certificate, there is a <strong>token</strong> used for WebSocket authentication. When the IoT box connects to the Odoo bus (WebSocket), it sends its token. If the token is invalid, it doesn't get subscribed to any channel.</p>
+          <p><strong>Where this is handled:</strong></p>
+          <ul>
+            <li>IoT box sends token during WebSocket subscribe: handled by <code>enterprise/iot/models/ir_websocket.py</code> → <code>_subscribe()</code></li>
+            <li>Token validation: <code>enterprise/iot/models/iot_box.py</code> → <code>_get_by_token()</code> (uses constant-time comparison for security)</li>
+            <li>If valid → IoT box subscribes to the IoT channel and receives actions from Odoo</li>
+            <li>If invalid → IoT box gets no messages, appears offline in the Odoo app</li>
+          </ul>
+        </div>
+
+        <!-- ── 12.5 ── -->
+        <div class="subsection">
+          <div class="subsection-title">12.5 The Complete Picture — One Diagram</div>
+          <pre>   IMAGE BUILD TIME
+   ─────────────────
+   A temp certificate is included in the IoT image.
+   CN = "OdooTempIoTBoxCertificate" (not a real cert)
+   File: setup/iot_box_builder/overwrite_before_init/etc/ssl/
+           │
+           ▼
+   FIRST BOOT (unpaired)
+   ─────────────────────
+   IoT box starts → shows pairing code
+   Tries to get real cert → fails (no db_uuid yet)
+   Temp cert stays → browsers show warning
+           │
+           ▼
+   USER PAIRS WITH ODOO DATABASE
+   ──────────────────────────────
+   Pairing code entered in Odoo IoT app
+   → Odoo sends credentials via iot-proxy
+   → IoT box saves: db_uuid, enterprise_code, token
+   → IoT box restarts
+   File: /etc/odoo/odoo.conf [iot.box] section
+           │
+           ▼
+   AFTER RESTART — REAL CERT OBTAINED
+   ───────────────────────────────────
+   IoT box asks odoo.com for a certificate
+   → odoo.com checks Enterprise license
+   → If valid: sends real Let's Encrypt cert
+   → Saved to both RAM and SD card paths
+   → nginx reloads → HTTPS now works
+   File: /etc/ssl/certs/nginx-cert.crt (RAM)
+   File: /root_bypass_ramdisks/etc/ssl/certs/nginx-cert.crt (SD)
+           │
+           ▼
+   DAILY — AUTO-RENEWAL
+   ────────────────────
+   Every day at midnight:
+   → Check if cert expires within 10 days
+   → If yes: download new cert from odoo.com
+   → If no: do nothing, cert is still good
+   Also runs on every boot.
+           │
+           ▼
+   IF LICENSE EXPIRES OR CREDENTIALS LOST
+   ───────────────────────────────────────
+   → Renewal fails (odoo.com rejects request)
+   → Current cert continues until it expires
+   → Once expired: HTTPS breaks
+   → IoT box effectively disconnected from Odoo
+   → Devices still work locally (HTTP, not HTTPS)</pre>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SECTION 13 -->
+      <!-- ═══════════════════════════════════════════ -->
+      <section class="doc-section" id="s13">
+        <div class="section-header">
+          <h2 class="section-title">Print Receipt: Complete Flow (Every Step)</h2>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">13.1 Overview — Two Communication Paths</div>
+          <p>When POS sends a print receipt command, there are two possible paths depending on the connection method:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Path</th>
+                  <th>Protocol</th>
+                  <th>Used When</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Path A: Longpolling (Direct HTTP)</strong></td>
+                  <td>HTTP POST from browser → IoT box</td>
+                  <td>Default path. Browser sends directly to IoT box IP.</td>
+                </tr>
+                <tr>
+                  <td><strong>Path B: WebSocket (Via Odoo Bus)</strong></td>
+                  <td>Odoo Bus → WebSocket → IoT box</td>
+                  <td>Fallback when longpolling fails. Message routed through Odoo server.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Both paths eventually reach the same handler on the IoT box. The response always comes back via the same mechanism that triggered the action.</p>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">13.2 Path A: Longpolling — Step by Step</div>
+          <p>This is the primary path. The browser communicates directly with the IoT box over HTTP.</p>
+
+          <div class="flow-steps">
+            <!-- STEP 1 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 1 — POS JavaScript</div>
+              <div class="flow-step-title">User Clicks "Print Receipt"</div>
+              <p>The POS JavaScript calls the IoT HTTP service:</p>
+              <pre>// enterprise/iot/static/src/network_utils/iot_http_service.js
+await this.env.services.iot_http.action(
+    iotBoxId,           // e.g., 5
+    deviceIdentifier,   // e.g., "usb_04b3:400c"
+    {
+        action: 'print_receipt',
+        receipt: receiptBase64,  // base64-encoded receipt image
+        session_id: uuid(),
+    },
+    onSuccess,
+    onFailure,
+    messageId
+);</pre>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 2</div>
+              <div class="flow-step-title"><code>IotHttpService.action()</code> — Client Orchestrator</div>
+              <p>Generates a unique <code>messageId</code> (UUID) for deduplication. Sets <code>data.action_unique_id = messageId</code>. Calls <code>_attemptFallbacks()</code>.</p>
+              <pre>// iot_http_service.js
+async action(iotBoxId, deviceIdentifier, data, onSuccess, onFailure, messageId) {
+    messageId ??= uuid();
+    data.action_unique_id = messageId;
+    await this._attemptFallbacks({iotBoxId, deviceIdentifier, data, messageId, onSuccess, onFailure});
+}</pre>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 3</div>
+              <div class="flow-step-title"><code>_attemptFallbacks()</code> — Protocol Selection</div>
+              <p>Looks up the IoT box record via ORM to get its IP address. Caches the result. Tries longpolling first, then falls back to WebSocket:</p>
+              <pre>// iot_http_service.js
+async _attemptFallbacks({iotBoxId, deviceIdentifier, data, ...}) {
+    // Look up IoT box IP
+    if (!this.cachedIotBoxes[iotBoxId]) {
+        this.cacheIotBoxRecords(await this.getIotBoxData(iotBoxId));
+    }
+    const { ip, identifier, use_lna } = this.cachedIotBoxes[iotBoxId];
+
+    // Try connection types in order: longpolling, then websocket
+    for (const connectionType of this.connectionTypes) {
+        try {
+            return await connectionType(params);
+        } catch (e) {
+            console.debug("attempted method failed, trying another protocol.");
+        }
+    }
+}</pre>
+            </div>
+
+            <!-- STEP 4 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 4</div>
+              <div class="flow-step-title"><code>IoTLongpolling.sendMessage()</code> — HTTP to IoT Box</div>
+              <p>Sends an HTTP POST directly to the IoT box's own HTTP server (port 8069):</p>
+              <pre>// iot_longpolling.js
+async sendMessage(iotBoxIp, message, messageId) {
+    const response = await this.rpc(iotBoxIp, {session_id: messageId, ...message}, {
+        route: "/iot_drivers/action",  // IoT box's action endpoint
+    });
+    return response?.result;
+}
+
+// rpc() calls:
+await post(iotBoxIp, "/iot_drivers/action", params, timeout, signal, useLna);
+// This is a direct HTTP POST to http://{iot_box_ip}/iot_drivers/action</pre>
+            </div>
+
+            <!-- STEP 5 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 5</div>
+              <div class="flow-step-title">IoT Box Receives HTTP Request</div>
+              <p>The request hits the IoT box's Odoo HTTP server. The <code>DriverController.action()</code> route handles it:</p>
+              <pre># community/addons/iot_drivers/controllers/driver.py
+class DriverController(http.Controller):
+    @route.iot_route(['/iot_drivers/action', '/hw_drivers/action'], type='jsonrpc', cors='*', csrf=False)
+    def action(self, session_id, device_identifier, data):
+        if isinstance(data, str):
+            data = json.loads(data)
+
+        message_type = 'iot_action'  # action on a specific device
+
+        return communication.handle_message(
+            message_type, 'lp',
+            session_id=session_id,
+            device_identifier=device_identifier,
+            **data
+        )</pre>
+            </div>
+
+            <!-- STEP 6 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 6</div>
+              <div class="flow-step-title"><code>handle_message()</code> — Message Router</div>
+              <p>Routes the message to the correct device driver based on <code>device_identifier</code>:</p>
+              <pre># community/addons/iot_drivers/tools/communication.py
+def handle_message(message_type, communication_type, **kwargs):
+    device_identifier = kwargs.get('device_identifier', IOT_IDENTIFIER)
+    base_response = {
+        'owner': kwargs.get('session_id', '0'),
+        'session_id': kwargs.get('session_id', '0'),
+        'iot_box_identifier': IOT_IDENTIFIER,
+        'device_identifier': device_identifier,
+        'time': time.time(),
+    }
+
+    match message_type:
+        case 'iot_action':
+            if device_identifier not in main.iot_devices:
+                return {**base_response, 'status': 'disconnected'}
+
+            # Call the device's action method
+            res = main.iot_devices[device_identifier].action(kwargs)
+            return {**base_response, **res}</pre>
+            </div>
+
+            <!-- STEP 7 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 7</div>
+              <div class="flow-step-title"><code>Driver.action()</code> — Action Dispatcher</div>
+              <p>Dispatches to the specific action handler. Checks for duplicate actions via LRU cache:</p>
+              <pre># community/addons/iot_drivers/driver.py
+class Driver(Thread):
+    def action(self, data):
+        action = data.get('action', '')          # 'print_receipt'
+        action_unique_id = data.get('action_unique_id')
+
+        # Deduplication: skip if this action was already processed
+        if action_unique_id:
+            if action_unique_id in self._recent_action_ids:
+                return {'status': 'duplicate'}
+            self._recent_action_ids[action_unique_id] = action_unique_id
+
+        session_id = data.get('session_id')
+        try:
+            response = {'status': 'success', 'result': self._actions[action](data), 'session_id': session_id}
+            # Printers return "pending" — they handle their own event lifecycle
+            if self.device_type in ["printer", "payment"]:
+                response['result'] = "pending"
+        except Exception as e:
+            response = {'status': 'error', 'result': str(e), 'session_id': session_id}
+
+        return response</pre>
+            </div>
+
+            <!-- STEP 8 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 8</div>
+              <div class="flow-step-title"><code>PrinterDriverBase.print_receipt()</code> — Image Processing</div>
+              <p>Decodes the base64 receipt image and converts it to a printer-compatible format:</p>
+              <pre># community/addons/iot_drivers/iot_handlers/drivers/printer_driver_base.py
+class PrinterDriverBase(Driver, ABC):
+    def print_receipt(self, data):
+        receipt = b64decode(data['receipt'])      # Decode base64 image
+        im = Image.open(io.BytesIO(receipt))     # Open as PIL Image
+
+        # Convert to greyscale then to black and white
+        im = im.convert("L")        # 8-bit greyscale
+        im = ImageOps.invert(im)    # Invert colors (receipt printers use black-on-white)
+        im = im.convert("1")        # 1-bit dithered black and white
+
+        # Choose format based on printer protocol (star or escpos)
+        print_command = getattr(self, 'format_%s' % self.receipt_protocol)(im)
+
+        # Send to CUPS
+        self.print_raw(print_command, action_unique_id=data.get("action_unique_id"))</pre>
+            </div>
+
+            <!-- STEP 9 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 9</div>
+              <div class="flow-step-title"><code>format_escpos()</code> or <code>format_star()</code> — Protocol Encoding</div>
+              <p>Converts the PIL image to ESC/POS or Star raster commands. For ESC/POS (Epson):</p>
+              <pre># printer_driver_base.py
+@classmethod
+def format_escpos(cls, im):
+    # Determines printing mode: 'raster' (GS v 0) or 'column' (ESC *)
+    # Raster mode (default):
+    width = int((im.width + 7) / 8)
+    raster_send = b'\x1d\x76\x30\x00'  # GS v 0 command
+    raster_data = b''
+    dots = im.tobytes()
+    while len(dots):
+        im_slice = dots[:width * 255]
+        slice_height = int(len(im_slice) / width)
+        raster_data += raster_send + width.to_bytes(2, 'little') + slice_height.to_bytes(2, 'little') + im_slice
+        dots = dots[width * 255:]
+    return raster_data + cls.RECEIPT_PRINTER_COMMANDS['escpos']['cut']</pre>
+            </div>
+
+            <!-- STEP 10 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 10</div>
+              <div class="flow-step-title"><code>PrinterDriver.print_raw()</code> — Send to CUPS via IPP</div>
+              <p>Sends the formatted data to CUPS (Common UNIX Printing System) which manages the actual printing:</p>
+              <pre># community/addons/iot_drivers/iot_handlers/drivers/printer_driver_L.py
+class PrinterDriver(PrinterDriverBase):
+    def print_raw(self, data, action_unique_id=None, duplex=True):
+        with self.cups_lock:  # Thread-safe CUPS access
+            options = {'document-format': CUPS_FORMAT_AUTO}
+            if not duplex:
+                options["sides"] = "one-sided"
+
+            # Create CUPS job
+            job_id = self.conn.createJob(self.device_identifier, 'Odoo print job', options)
+
+            # Send document data
+            self.conn.startDocument(self.device_identifier, job_id, 'Odoo print job', CUPS_FORMAT_AUTO, 1)
+            self.conn.writeRequestData(data, len(data))
+            self.conn.finishDocument(self.device_identifier)
+
+        # Track job for status polling
+        self.job_ids.append(job_id)
+        if action_unique_id:
+            self.job_action_ids[job_id] = action_unique_id</pre>
+              <p>The CUPS daemon then sends the IPP commands to the printer via USB or network.</p>
+            </div>
+
+            <!-- STEP 11 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 11</div>
+              <div class="flow-step-title">Response Returns to POS — "Pending"</div>
+              <p>The response flows back through the chain: <code>print_raw()</code> → <code>print_receipt()</code> → <code>Driver.action()</code> → <code>handle_message()</code> → <code>DriverController.action()</code> → HTTP response.</p>
+              <p>The response is:</p>
+              <pre>{
+    "status": "success",
+    "result": "pending",      // ← Printers return "pending" (async)
+    "session_id": "uuid-..."
+}</pre>
+              <p>Since <code>result === "pending"</code>, the POS <strong>does NOT</strong> call <code>onSuccess()</code> yet. Instead, it starts listening for events via longpolling:</p>
+              <pre>// iot_http_service.js — _longpolling()
+if (response?.result !== "pending") {
+    return onSuccess(response, deviceIdentifier, messageId);  // ← NOT taken for printers
+}
+// Wait for async completion via event polling
+return await this.longpolling.onMessage(ip, deviceIdentifier, onSuccess, onFailure, messageId);</pre>
+            </div>
+
+            <!-- STEP 12 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 12</div>
+              <div class="flow-step-title">POS Polls for Completion — Longpolling</div>
+              <p>The POS JavaScript starts a long-polling loop to <code>/iot_drivers/event</code> on the IoT box:</p>
+              <pre>// iot_longpolling.js — poll()
+const { result } = await this.rpc(iotBoxIp, { listener }, {
+    route: "/iot_drivers/event",   // ← IoT box's event endpoint
+    timeout: 60000,                // Wait up to 60 seconds
+});
+
+// If a matching event arrives, call the device callback
+if (listener.session_id && result?.session_id === listener.session_id) {
+    listener.devices[result.device_identifier]?.callback(result);
+}
+
+// Keep polling if devices are still listening
+if (Object.keys(listener.devices).length) {
+    this.poll(iotBoxIp, fallback, useLna);  // ← recursive poll
+}</pre>
+              <p>On the IoT box, <code>DriverController.event()</code> handles this by checking for recent events and waiting for new ones:</p>
+              <pre># community/addons/iot_drivers/controllers/driver.py
+@route.iot_route(['/iot_drivers/event', '/hw_drivers/event'], type='jsonrpc', cors='*', csrf=False)
+def event(self, listener):
+    req = event_manager.add_request(listener)
+
+    # Check for events from the last 5 seconds
+    oldest_time = time.time() - 5
+    for event in list(event_manager.events):
+        if event['time'] < oldest_time:
+            del event_manager.events[0]
+            continue
+        if event['device_identifier'] in listener['devices'] and event['time'] > listener['last_event']:
+            return event  # ← Return immediately if event found
+
+    # Wait for new event (up to 50 seconds)
+    if req['event'].wait(50):
+        req['event'].clear()
+        return req['result']</pre>
+            </div>
+
+            <!-- STEP 13 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 13</div>
+              <div class="flow-step-title">Printer Driver Polls CUPS Job Status</div>
+              <p>Meanwhile, the printer driver's <code>run()</code> method (running in its own daemon thread) polls CUPS for job completion every 1 second:</p>
+              <pre># printer_driver_base.py
+def run(self):
+    while True:
+        for job_id in self.job_ids:
+            self._check_job_status(job_id)
+        time.sleep(1)  # Poll every 1 second</pre>
+              <pre># printer_driver_L.py
+def _check_job_status(self, job_id):
+    with self.cups_lock:
+        job = self.conn.getJobAttributes(job_id, requested_attributes=[
+            'job-state', 'job-state-reasons', 'job-printer-state-message', 'time-at-creation'
+        ])
+        job_state = job['job-state']
+
+        if job_state == IPP_JOB_COMPLETED:        # Job finished successfully
+            self.job_ids.remove(job_id)
+            self.job_action_ids.pop(job_id, None)
+            self.send_status(status='success')    # ← TRIGGERS EVENT BACK TO ODOO
+
+        elif job['time-at-creation'] + self.job_timeout_seconds < time.time():
+            self._cancel_job_with_error(job_id, 'ERROR_TIMEOUT')
+
+        elif job_state == IPP_JOB_PROCESSING and 'printer is unreachable' in job.get('job-printer-state-message', ''):
+            self._cancel_job_with_error(job_id, 'ERROR_UNREACHABLE')
+
+        elif job_state not in [IPP_JOB_PROCESSING, IPP_JOB_PENDING]:
+            self._cancel_job_with_error(job_id, 'ERROR_UNKNOWN')</pre>
+            </div>
+
+            <!-- STEP 14 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 14</div>
+              <div class="flow-step-title"><code>send_status()</code> → Event Manager</div>
+              <p>When the job completes, the driver calls <code>send_status()</code> which pushes an event through the event manager:</p>
+              <pre># printer_driver_base.py
+def send_status(self, status, message=None, action_unique_id=None):
+    self.data['status'] = status
+    self.data['message'] = message
+    event_manager.device_changed(self)  # ← Notify event manager</pre>
+            </div>
+
+            <!-- STEP 15 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 15</div>
+              <div class="flow-step-title"><code>event_manager.device_changed()</code> — Dual Notification</div>
+              <p>The event manager does two things simultaneously:</p>
+              <pre># community/addons/iot_drivers/event_manager.py
+class EventManager:
+    def device_changed(self, device, data=None):
+        event = {
+            **device.data,                      # {'status': 'success', 'message': None}
+            'device_identifier': device.device_identifier,
+            'time': time.time(),
+        }
+
+        # 1. Send to Odoo database via HTTP POST (for WebSocket path)
+        send_to_controller({
+            **event,
+            'iot_box_identifier': IOT_IDENTIFIER,
+        })
+
+        # 2. Wake up any waiting longpolling sessions (for longpolling path)
+        self.events.append(event)
+        for session in self.sessions:
+            session_devices = self.sessions[session]['devices']
+            if (
+                any(d in [device.device_identifier, device.device_type] for d in session_devices)
+                and not self.sessions[session]['event'].is_set()
+            ):
+                self.sessions[session]['result'] = event
+                self.sessions[session]['event'].set()  # ← Wakes up the waiting thread</pre>
+              <p>For the longpolling path, <code>event.set()</code> wakes up the <code>req['event'].wait(50)</code> in <code>DriverController.event()</code>, which returns the event to the POS.</p>
+            </div>
+
+            <!-- STEP 16 -->
+            <div class="flow-step">
+              <div class="flow-step-num">Step 16</div>
+              <div class="flow-step-title">POS Receives Completion — Longpolling Returns</div>
+              <p>The longpolling poll returns with the event data. The callback fires:</p>
+              <pre>// iot_longpolling.js — poll()
+const { result } = await this.rpc(iotBoxIp, { listener }, {
+    route: "/iot_drivers/event",
+});
+
+// result = { status: 'success', device_identifier: 'usb_04b3:400c', ... }
+if (listener.session_id && result?.session_id === listener.session_id) {
+    listener.devices[result.device_identifier]?.callback(result);
+    // → onSuccess({status: 'success', ...}) called
+}</pre>
+              <p>The POS shows: "Printing completed successfully" or similar notification.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">13.3 Path B: WebSocket — Alternative Path</div>
+          <p>When longpolling fails (e.g., firewall blocks direct HTTP to IoT box), the system falls back to WebSocket via Odoo's bus system.</p>
+
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-step-num">Step B1</div>
+              <div class="flow-step-title">POS Sends via WebSocket</div>
+              <pre>// iot_websocket.js
+async sendMessage(iotBoxIdentifier, message, messageId, messageType = "iot_action") {
+    await this.orm.call("iot.channel", "send_message", [
+        { iot_identifier: iotBoxIdentifier, session_id: messageId, ...message },
+        messageType,
+    ]);
+}
+// This calls: iot.channel.send_message() on the Odoo server</pre>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-step-num">Step B2</div>
+              <div class="flow-step-title">Odoo Server Pushes to Bus</div>
+              <pre># enterprise/iot/models/iot_channel.py
+class IotChannel(models.AbstractModel):
+    _name = 'iot.channel'
+
+    @api.model
+    def send_message(self, message, message_type='iot_action'):
+        self.env['bus.bus']._sendone(self.get_iot_channel(), message_type, message)
+        # Bus pushes to all subscribers on the IoT channel</pre>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-step-num">Step B3</div>
+              <div class="flow-step-title">IoT Box Receives via WebSocket</div>
+              <pre># community/addons/iot_drivers/websocket_client.py
+class WebsocketClient(Thread):
+    def on_message(self, ws, messages):
+        for message in json.loads(messages):
+            payload = message['message']['payload']
+            message_type = message['message']['type']
+
+            # Filter by IoT box identifier
+            if payload.get('iot_identifier') != IOT_IDENTIFIER:
+                continue
+
+            # Route to handler
+            result = communication.handle_message(message_type, 'ws', **payload)
+            if result:
+                send_to_controller(result)  # Send response back to Odoo</pre>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-step-num">Step B4</div>
+              <div class="flow-step-title">Same Handler Chain</div>
+              <p>From here, the flow is identical to Path A Steps 6–10: <code>handle_message()</code> → <code>Driver.action()</code> → <code>print_receipt()</code> → <code>print_raw()</code> → CUPS.</p>
+            </div>
+
+            <div class="flow-step">
+              <div class="flow-step-num">Step B5</div>
+              <div class="flow-step-title">Response via WebSocket</div>
+              <p>When the printer job completes, <code>send_to_controller()</code> sends an HTTP POST to <code>/iot/box/send_websocket</code> on the Odoo server. The Odoo controller pushes the confirmation to the bus, and the POS receives it via <code>IotWebsocket.onMessage()</code>.</p>
+              <pre># enterprise/iot/controllers/main.py
+@http.route('/iot/box/send_websocket', type='jsonrpc', auth='public')
+def iot_box_send_websocket(self, session_id, iot_box_identifier, device_identifier, status, **kwargs):
+    request.env['iot.channel'].send_message({
+        'session_id': session_id,
+        'iot_box_identifier': iot_box_identifier,
+        'device_identifier': device_identifier,
+        'message': {'status': status, 'result': kwargs.get('result', {})},
+    }, message_type='operation_confirmation')
+    # → Bus pushes to POS → IotWebsocket.onMessage() callback fires</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">13.4 Complete Method Chain — Quick Reference</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Location</th>
+                  <th>Method</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>POS JS</td><td><code>iot_http.action()</code></td><td>User clicks print</td></tr>
+                <tr><td>2</td><td><code>iot_http_service.js</code></td><td><code>IotHttpService.action()</code></td><td>Sets up dedup ID</td></tr>
+                <tr><td>3</td><td><code>iot_http_service.js</code></td><td><code>_attemptFallbacks()</code></td><td>Looks up IoT box, tries protocols</td></tr>
+                <tr><td>4</td><td><code>iot_longpolling.js</code></td><td><code>IoTLongpolling.sendMessage()</code></td><td>Sends HTTP to IoT box</td></tr>
+                <tr><td>5</td><td><code>iot_longpolling.js</code></td><td><code>IoTLongpolling.rpc()</code></td><td>Executes HTTP POST</td></tr>
+                <tr><td>6</td><td><code>http.js</code></td><td><code>post()</code></td><td>Actual network call</td></tr>
+                <tr><td>7</td><td>IoT <code>controllers/driver.py</code></td><td><code>DriverController.action()</code></td><td>Receives HTTP request</td></tr>
+                <tr><td>8</td><td>IoT <code>tools/communication.py</code></td><td><code>handle_message()</code></td><td>Routes to device</td></tr>
+                <tr><td>9</td><td>IoT <code>driver.py</code></td><td><code>Driver.action()</code></td><td>Deduplicates, dispatches</td></tr>
+                <tr><td>10</td><td>IoT <code>printer_driver_base.py</code></td><td><code>print_receipt()</code></td><td>Decodes &amp; formats image</td></tr>
+                <tr><td>11</td><td>IoT <code>printer_driver_base.py</code></td><td><code>format_escpos()</code></td><td>ESC/POS raster conversion</td></tr>
+                <tr><td>12</td><td>IoT <code>printer_driver_L.py</code></td><td><code>print_raw()</code></td><td>Sends to CUPS via IPP</td></tr>
+                <tr><td>13</td><td>CUPS daemon</td><td>—</td><td>Manages print queue</td></tr>
+                <tr><td>14</td><td>IoT <code>printer_driver_base.py</code></td><td><code>run()</code></td><td>Background thread polls jobs</td></tr>
+                <tr><td>15</td><td>IoT <code>printer_driver_L.py</code></td><td><code>_check_job_status()</code></td><td>Checks IPP job state</td></tr>
+                <tr><td>16</td><td>IoT <code>printer_driver_base.py</code></td><td><code>send_status()</code></td><td>Sends completion event</td></tr>
+                <tr><td>17</td><td>IoT <code>event_manager.py</code></td><td><code>device_changed()</code></td><td>Notifies Odoo via HTTP</td></tr>
+                <tr><td>18</td><td>IoT <code>websocket_client.py</code></td><td><code>send_to_controller()</code></td><td>HTTP POST to Odoo server</td></tr>
+                <tr><td>19</td><td>Odoo <code>controllers/main.py</code></td><td><code>iot_box_send_websocket()</code></td><td>Receives confirmation</td></tr>
+                <tr><td>20</td><td>Odoo <code>models/iot_channel.py</code></td><td><code>send_message()</code></td><td>Pushes to bus</td></tr>
+                <tr><td>21</td><td>Odoo <code>bus.bus</code></td><td><code>_sendone()</code></td><td>Publishes to subscribers</td></tr>
+                <tr><td>22</td><td>POS JS <code>iot_websocket.js</code></td><td><code>onMessage()</code> callback</td><td>Receives confirmation</td></tr>
+                <tr><td>23</td><td>POS UI</td><td>—</td><td>Shows success message</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subsection">
+          <div class="subsection-title">13.5 ASCII Flow Diagram</div>
+          <pre>POS Browser (JavaScript)
+    │
+    │  1. iotHttp.action(iotBoxId, deviceId, {action:'print_receipt', receipt:'...'})
+    ▼
+IotHttpService.action()
+    │
+    │  2. _attemptFallbacks() → try longpolling first
+    ▼
+IoTLongpolling.sendMessage(ip, params)
+    │
+    │  3. HTTP POST to http://{iot_box_ip}/iot_drivers/action
+    │     Body: {session_id, device_identifier, data: {action:'print_receipt', receipt:'...'}}
+    ▼
+═══════════════════════════════════════════════════════
+  IoT Box (Raspberry Pi) — community/addons/iot_drivers
+═══════════════════════════════════════════════════════
+    │
+    │  4. DriverController.action()       [controllers/driver.py]
+    ▼
+communication.handle_message('iot_action', 'lp', ...)
+    │
+    │  5. tools/communication.py → match 'iot_action'
+    ▼
+main.iot_devices['usb_04b3:400c'].action(kwargs)
+    │
+    │  6. Driver.action()                 [driver.py]
+    │     - Deduplication check via LRU cache
+    │     - Looks up _actions['print_receipt']
+    ▼
+PrinterDriverBase.print_receipt(data)     [printer_driver_base.py]
+    │
+    │  7. b64decode → PIL Image → greyscale → 1-bit
+    ▼
+format_escpos(im) or format_star(im)
+    │
+    │  8. Convert to ESC/POS raster commands
+    ▼
+PrinterDriver.print_raw(data)             [printer_driver_L.py]
+    │
+    │  9. CUPS Connection:
+    │     conn.createJob() → conn.startDocument() →
+    │     conn.writeRequestData() → conn.finishDocument()
+    ▼
+CUPS Daemon → USB/Network → Physical Printer 🖨️
+    │
+    │  10. Returns 'pending' to POS (async)
+    │
+    │      Meanwhile, PrinterDriver.run() polls every 1s:
+    │      _check_job_status() → IPP_JOB_COMPLETED
+    ▼
+send_status('success')                    [printer_driver_base.py]
+    │
+    │  11. event_manager.device_changed(self)
+    ▼
+EventManager.device_changed()             [event_manager.py]
+    │
+    │  12. send_to_controller({event, iot_box_identifier})
+    ▼
+HTTP POST to https://{odoo_server}/iot/box/send_websocket
+    │
+═══════════════════════════════════════════════════════
+  Odoo Central Server — enterprise/iot
+═══════════════════════════════════════════════════════
+    │
+    │  13. IoTController.iot_box_send_websocket()  [controllers/main.py]
+    ▼
+iot.channel.send_message({session_id, device_identifier, message}, 'operation_confirmation')
+    │
+    │  14. bus.bus._sendone(channel, 'operation_confirmation', message)
+    ▼
+Odoo Bus System → pushes to all subscribers on the IoT channel
+    │
+═══════════════════════════════════════════════════════
+  POS Browser (JavaScript) — receives bus event
+═══════════════════════════════════════════════════════
+    │
+    │  15. IotWebsocket.onMessage() callback fires
+    │      - Validates iot_box_identifier, device_identifier, session_id
+    │      - Calls onSuccess(message)
+    ▼
+POS UI shows "Print Receipt Successful" ✅</pre>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════════ -->
       <!-- APPENDIX A -->
       <!-- ═══════════════════════════════════════════ -->
       <section class="doc-section" id="appA">
@@ -3384,7 +4318,7 @@ log_level = info</pre>
     });
 
     // ── CLOSE SIDEBAR ON NAV CLICK (MOBILE) ──────────
-    navLinks2.forEach(link => {
+    navLinks.forEach(link => {
       link.addEventListener('click', () => {
         if (window.innerWidth <= 900) sidebar.classList.remove('open');
       });
